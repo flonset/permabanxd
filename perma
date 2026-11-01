@@ -1,9 +1,139 @@
 -- ═══════════════════════════════════════════════════════════════
+-- v0.01 alpha changelog (trapfreeze):
+-- [FIX] «фриз секунду»: анти-трап ждал, пока WalkSpeed <= 1
+--       продержится ЦЕЛУЮ СЕКУНДУ (Zero >= 1 в поллинге 0.1с), и
+--       только потом открывал окно разблокировки — игрок стоял
+--       столбом секунду. Теперь МГНОВЕННО: первый же тик с нулевой
+--       скоростью открывает TRAP_HOLD и возвращает скорость из кеша
+-- [FIX] «когда я должен быть в пустоте — тогда фриз»: штатная
+--       концовка раунда (тело летит в пустоту) больше НЕ
+--       перехватывается: если HumanoidRootPart опустился ниже
+--       FallenPartsDestroyHeight + 60 — анти-трап молчит (не чинит
+--       скорость, не сносит якоря, не снимает PlatformStand),
+--       игра честно отыгрывает сброс в пустоту
+-- ═══════════════════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════════════════════
+-- v0.00 alpha changelog (invispark):
+-- [FIX] инвиз: тело НЕ уезжало с карты вообще — якорь ставился сразу
+--       после телепорта, а якорь с клиента серверу не реплицируется,
+--       тело перестаёт симулироваться и поза паркинга до сервера не
+--       доходит. Теперь якоря нет: тело держит ПИН на Heartbeat
+--       (каждый кадр CFrame на точку парковки + нулевые скорости) —
+--       клиент симулирует и рассылает позу, сервер видит тело под
+--       картой, для остальных ты исчез с карты
+-- [CHG] парковка как в iY: на 12 стадов под найденным полом, а не у
+--       самого дна мира; запас над FallenPartsDestroyHeight остался
+-- [FIX] гардиан больше не перезаанкоривает тело (то же отравление
+--       репликации), раунд-переезд ловится в обе стороны по Y
+-- [FIX] возврат в тело: отвязка ДО телепорта (CFrame на якоре не
+--       реплицируется), пин глушится до возврата — не перекричит
+--       телепорт обратно
+-- ═══════════════════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════════════════════
+-- v0.00 alpha changelog (mimianim + jumpcircle):
+-- [NEW] мими живёт одной анимацией с окном: тот же iOS-скейл —
+--       всплывает при открытии, схлопывается при закрытии; пивот
+--       общий (центр окна), так что мими приклеена к рамке всю
+--       анимацию
+-- [CHG] джамп-серкл взят у шитаро: кольцо-текстура на SurfaceGui
+--       (AlwaysOnTop, ZOffset 4) вместо неон-цилиндра и сегментов,
+--       одним Quint-твином вырастает и растворяется (0.82с — дефолт
+--       duration из дампа); пол ищется лучом — круг ложится ровно
+--       на поверхность, работают склоны и ступеньки
+-- [CHG] джамп-серкл меньше: диаметр 6 -> 4 стада
+-- ═══════════════════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════════════════════
+-- v0.00 alpha changelog (mimitop):
+-- [CHG] мими выпирает СВЕРХУ окна (верхняя часть торчит над рамкой
+--       GUI) и стала чуть больше: 112 -> 128px
+-- [CHG] лого-аватарка в сайдбаре заметно больше: 56 -> 80px
+-- ═══════════════════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════════════════════
+-- v0.00 alpha changelog (invisfix):
+-- [FIX] инвиз: тело теперь уезжает ЗА КАРТУ при включении — глубоко
+--       под карту с запасом над FallenPartsDestroyHeight (ниже тело
+--       уничтожит и инвиз кончится), как в iY; раньше оно оставалось
+--       стоять под полом в точке включения
+-- [FIX] гардиан при раунд-переезде тоже перепаркивает тело за карту,
+--       а не на 14 стадов под пол
+-- [FIX] аварийный возврат без клона поднимает тело на уровень
+--       поверхности точки включения, а не из глубины под картой
+-- ═══════════════════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════════════════════
+-- v0.00 alpha changelog (prerelease):
+-- [FIX] флинг переписан ТОЧНО ПО ДАМПУ шитаро (shit.lua 17874-17998,
+--       do_fling): свой HRP телепортируется вокруг цели с Velocity
+--       9e7 и RotVelocity 9e8 — сервер разруливает контакт, улетает
+--       ЦЕЛЬ. BodyVelocity глушит свой полёт, FallenPartsDestroyHeight
+--       на время флинга отключён, после — возврат на записанную точку
+-- [NEW] кил-аура: тумблер Auto knife в окне MURDERER — включен (как в
+--       шитаро): нож достаётся сам; выключен: аура сама нож НЕ достаёт
+--       и не режет, пока нож не взят в руки
+-- [NEW] визуальный секс при переключении вкладок: контент вылетает
+--       пружиной, кнопка вкладки вспыхивает
+-- [CHG] желе заменено на iOS-анимацию: открытие — всплытие с 82% с
+--       пружинным перелётом; закрытие — схлопывание в 86% (крестик
+--       окон, тогглы настроек, RightAlt)
+-- [CHG] мими и лого поменялись местами в сайдбаре (мими теперь
+--       сверху); мими выросла в 2 раза (112px) и висит на левом краю
+--       окна — большая часть за рамкой GUI, чуть-чуть заходит на рамку
+-- [CHG] описания функций сокращены до краткого «что делают», без
+--       объяснений как работает
+-- [VER] версия сброшена в v0.00 alpha: рабочие билды теперь тесты,
+--       релиз — когда всё допилю
+-- ═══════════════════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════════════════════
+-- v2.44 changelog (shitaro):
+-- [FIX] аим переписан ТОЧНО ПО ДАМПУ шитаро (shit.lua 3460-3533,
+--       3655-3669): сайлент — это подмена GetMouseTargetCFrame/
+--       GetTargetPosition, которые при активной цели возвращают
+--       ЧИСТЫЙ CFrame.new(точка_аима), а без цели — оригинал. Клик
+--       идёт по нативному пути игры (игра сама шлёт Shoot:FireServer)
+--       — поэтому у шитаро клик всегда стреляет и камера не замерзает.
+--       Хук переустанавливается раз в 1с, как tick 3655 у шитаро
+-- [DEL] namecall-хук (__namecall: Raycast/FindPartOnRay/FireServer)
+--       удалён ПОЛНОСТЬЮ — у шитаро его нет: редирект FireServer
+--       дублировал WS-хук, а редирект Raycast совпадал углом с лучом
+--       камеры (камера смотрит на цель) и ломал её коллизию. Нож
+--       бросается натурально, Force Shot — push_origin + aim коридора
+--       через тот же WS-хук (resolve_shot 3462-3468)
+-- ═══════════════════════════════════════════════════════════════
+-- v2.43 changelog (clickfix):
+-- [FIX] заморозка камеры при аиме шерифа + «не стреляет с кнопки»:
+--       патч WeaponService.GetMouseTargetCFrame/GetTargetPosition
+--       УДАЛЁН — игра зовёт эти методы каждый кадр для своего зума и
+--       прицела, наш синтетический CFrame ломал её стейт (камера
+--       вставала, клик обрывался до Shoot:FireServer). Сайлент теперь
+--       работает только через перенаправление Shoot:FireServer — тот
+--       же путь, что у Auto Shoot, поэтому он и стрелял всегда
+-- [FIX] гейты Raycast/FindPartOnRay усилены: луч ИЗ КАМЕРЫ никогда
+--       не перенаправляется (это её коллизия — второй источник
+--       заморозки), угол к цели поднят 0.85 -> 0.98
+-- ═══════════════════════════════════════════════════════════════
+-- v2.42 changelog (killaura):
+-- [FIX] обычный клик не стрелял: редирект FireServer "Shoot" теперь
+--       только с чистой линией до точки аима (clear_to_target шитаро),
+--       иначе выстрел не трогаем — летит натурально, куда навёл курсор;
+--       хук Raycast/FindPartOnRay трогает ТОЛЬКО лучи в сторону цели
+--       (угол > 0.85) — лучи игры мимо цели больше не ломаются
+-- [NEW] окно MURDERER вернулось напротив SHERIFF: в нём хитбокс
+--       (переехал с вкладки Target, отдельное окно HITBOX удалено)
+--       и кил-аура из дампа шитаро (shit.lua 3838-4007): KnifeStabbed
+--       + HandleTouched на каждую жертву, слайдер дистанции 5-60,
+--       тумблер kill all; роль мардера — Modules/CurrentRoundClient.
+--       PlayerData с фолбэком на наш GetPlayerData-парсер
+-- ═══════════════════════════════════════════════════════════════
+-- v2.41 changelog (registerfix):
+-- [FIX] 'Out of local registers: exceeded limit 200' — в чанке было 226
+--       top-level local, лимит Lua — 200. 51 локал сгруппирован в 4
+--       таблицы: roleDbg / roleCfg / gunHook / aimRegs (логика та же).
+-- ═══════════════════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════════════════════
 -- PERMABAN — VISUALS BUILD (iOS STYLE)
 -- China Hat • Jump Circle • Fake (Headless / Korblox Right+Left) • Animations
 -- Bullet Tracer (вкладка General)
--- Темы Light/Dark/Brown • Лого + молоток разраба в сайдбаре • Тултипы на русском
--- Функции в 2 столбика, желе-анимация окон
+-- Темы Light/Dark/Brown • Мими выпирает сверху окна + лого в сайдбаре • Тултипы на русском
+-- Функции в 2 столбика, iOS-анимация окон
 -- Хоткей меню: правый Alt
 -- ═══════════════════════════════════════════════════════════════
 
@@ -58,10 +188,10 @@ local LocalPlayer = Players.LocalPlayer
 -- v2.30-roleparser: ФИКС «чамсы работают только после появления оружия в
 -- рюкзаке». GetPlayerData отдаёт Killed=0 (ЧИСЛО, а 0 в Lua — truthy), старый
 -- парсер требовал «нет Dead И нет Killed» — роль у всех живых молча
--- пропускалась, serverRoles после table.clear оставался пустым, roleOf
+-- пропускалась, roleDbg.serverRoles после table.clear оставался пустым, roleOf
 -- проваливался в скан рюкзака. Теперь Role читается ВСЕГДА (Dead/Killed
 -- игнорируются, мёртвые тоже красятся), поддержан формат массива
--- {{Name=..., Role=...}}, и есть однократный дамп serverRoles в консоль
+-- {{Name=..., Role=...}}, и есть однократный дамп roleDbg.serverRoles в консоль
 -- для проверки реального формата ролей
 -- v2.31-roleprobe: «не помогло» — значит ремоут либо не нашёлся, либо кинул
 -- ошибку, либо отдал формат который парсер не понял. Раньше все три случая
@@ -113,7 +243,7 @@ local LocalPlayer = Players.LocalPlayer
 -- ① Фильтр Dead/Killed (aliveInfo) — главный подозреваемый всего бага:
 -- если Killed в GetPlayerData это ЧИСЛО УБИЙСТВ ЗА ВСЁ ВРЕМЯ (стат, а не
 -- «жертвы раунда»), то фильтр «Killed>0 → мёртв» молча выкидывал из
--- serverRoles всех, кто хоть кого-то убивал, и чамсы работали только по
+-- roleDbg.serverRoles всех, кто хоть кого-то убивал, и чамсы работали только по
 -- оружию. Теперь роли читаются у ВСЕХ, без Dead/Killed (мёртвым
 -- подсветка и так не вешается — у них нет живого персонажа).
 -- ② Скан оружия и кеш удалены из roleOf (roleFromWeapons/roleCache/
@@ -216,9 +346,9 @@ local LocalPlayer = Players.LocalPlayer
 -- (дефолт 12 — как radius шитаро), старый конфиг с Size 25–60
 -- поджимается. Тогл Hitbox на вкладке Target и гейт «только за
 -- мардера» на месте
-local BUILD = "v2.40-knifefly"
+local BUILD = "v0.01-alpha"
 print("[PERMABAN] build " .. BUILD .. " loaded")
-print("[PERMABAN] хитбокс с дампа шитаро: брошенный нож сам доводится до цели (ThrowingKnife + HandleTouched, радиус в окне HITBOX); инвиз переживает конец раунда (анти-трап TrapHitLocal, клон едет в лобби с телом); аим: Force Shot в SHERIFF, Auto shoot, сайлент с LOS-подбором части тела; чамсы ролей = ТОЛЬКО GetPlayerData; velocity desync")
+print("[PERMABAN] v0.00 alpha: флинг из дампа шитаро (do_fling), кил-аура с тумблером Auto knife, iOS-анимации окон, вкладок и мими, джамп-серкл кольцом шитаро (4 стада), инвиз паркует тело под картой пином на Heartbeat; аим как в шитаро — клик стреляет, камера живая")
 
 -- CoreGui недоступен из обычных LocalScript в Studio — достаём через pcall,
 -- иначе весь скрипт падает на этой строке ещё до меню
@@ -495,10 +625,10 @@ end
 
 -- ==========================================
 -- 3. JUMP CIRCLE (круги под ногами при прыжке)
--- Отдельная функция: вызвалась — построила круг.
--- Залитый = плоский диск-цилиндр, без заливки =
--- кольцо из 32 сегментов, парит чуть выше пола.
--- Жизнь круга: растёт 0.5 сек → растворяется 1 сек.
+-- Круг взят у шитаро: невидимый якорь + SurfaceGui с текстурой
+-- кольца (AlwaysOnTop) — одним Quint-твином вырастает и тает.
+-- Пол под ногами ищется лучом: круг садится ровно на поверхность,
+-- работают склоны и ступеньки. Filled = мягкая заливка внутри.
 -- ==========================================
 local jumpState = {
     Enabled = false,
@@ -508,9 +638,8 @@ local jumpState = {
     Filled = true
 }
 
-local JUMP_RADIUS = 3
-local JUMP_SEGMENTS = 32
-local RING_LIFT = 0.05  -- микроподъём, чтобы кольцо не мерцало в текстуре пола
+local JUMP_DIAMETER = 4   -- итоговый диаметр круга (было 6 — стал меньше)
+local JUMP_LIFE = 0.82    -- жизнь круга, сек (дефолт duration у шитаро)
 
 local circleFolder = Instance.new("Folder")
 circleFolder.Name = "PermaBan_JumpCircles"
@@ -520,74 +649,83 @@ local function jumpColor()
     return Color3.fromHSV(jumpState.Hue, 1, math.max(jumpState.Brightness, 0.05))
 end
 
-local function makeCirclePart()
-    local p = Instance.new("Part")
-    p.Anchored = true
-    p.CanCollide = false
-    p.CanQuery = false
-    p.CanTouch = false
-    p.CastShadow = false
-    p.Material = Enum.Material.Neon
-    p.TopSurface = Enum.SurfaceType.Smooth
-    p.BottomSurface = Enum.SurfaceType.Smooth
-    return p
-end
-
-local function spawnJumpCircle(pos)
+local function spawnJumpCircle(pos, char)
     if not jumpState.Enabled then return end
 
-    if not jumpState.Filled then
-        pos = pos + Vector3.new(0, RING_LIFT, 0)  -- без заливки — выше пола
+    -- пол под ногами ищем лучом (как у шитаро): круг садится ровно на
+    -- поверхность — работают склоны и ступеньки; свой персонаж исключён
+    local normal = Vector3.new(0, 1, 0)
+    local prm = RaycastParams.new()
+    prm.FilterType = Enum.RaycastFilterType.Exclude
+    prm.FilterDescendantsInstances = char and { char, circleFolder } or { circleFolder }
+    prm.IgnoreWater = true
+    local hit = workspace:Raycast(pos + Vector3.new(0, 1, 0), Vector3.new(0, -8, 0), prm)
+    if hit then
+        pos = hit.Position
+        normal = hit.Normal
     end
 
     local color = jumpColor()
-    local baseTransparency = math.clamp(jumpState.Transparency, 0, 0.99)
-    local parts = {}
-    local growInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local alpha = math.clamp(jumpState.Transparency, 0, 0.99)
 
+    -- круг шитаро: невидимый якорь-носитель + SurfaceGui с картинкой
+    -- кольца. AlwaysOnTop — круг виден всегда, ZOffset — как в дампе
+    local ref = math.abs(normal.Y) > 0.98 and Vector3.xAxis or Vector3.yAxis
+    local right = normal:Cross(ref).Unit
+    local front = right:Cross(normal).Unit
+    local part = Instance.new("Part")
+    part.Name = "PermaBan_JumpCircle"
+    part.Anchored = true
+    part.CanCollide = false
+    part.CanQuery = false
+    part.CanTouch = false
+    part.CastShadow = false
+    part.Transparency = 1
+    part.Size = Vector3.new(0.3, 0.01, 0.3)
+    part.CFrame = CFrame.fromMatrix(pos + normal * 0.012, right, normal, front)
+    part.Parent = circleFolder
+
+    local sg = Instance.new("SurfaceGui")
+    sg.Face = Enum.NormalId.Top
+    sg.AlwaysOnTop = true
+    sg.LightInfluence = 0
+    sg.ZOffset = 4
+    sg.CanvasSize = Vector2.new(1024, 1024)
+    sg.Parent = part
+
+    local ring = Instance.new("ImageLabel")
+    ring.BackgroundTransparency = 1
+    ring.Size = UDim2.fromScale(1, 1)
+    ring.Image = "rbxassetid://7185003058"
+    ring.ImageColor3 = color
+    ring.ImageTransparency = alpha
+    ring.ScaleType = Enum.ScaleType.Stretch
+    ring.Parent = sg
+
+    -- Filled: мягкий диск-заливка внутри кольца (UICorner 1 = идеальный круг)
     if jumpState.Filled then
-        local disk = makeCirclePart()
-        disk.Shape = Enum.PartType.Cylinder
-        disk.Size = Vector3.new(0.05, 0.2, 0.2)
-        disk.CFrame = CFrame.new(pos) * CFrame.Angles(0, 0, math.rad(90))
-        disk.Color = color
-        disk.Transparency = baseTransparency
-        disk.Parent = circleFolder
-        parts[1] = disk
-        TweenService:Create(disk, growInfo, {
-            Size = Vector3.new(0.05, JUMP_RADIUS * 2, JUMP_RADIUS * 2)
+        local disc = Instance.new("Frame")
+        disc.AnchorPoint = Vector2.new(0.5, 0.5)
+        disc.Position = UDim2.fromScale(0.5, 0.5)
+        disc.Size = UDim2.fromScale(0.8, 0.8)
+        disc.BackgroundColor3 = color
+        disc.BackgroundTransparency = math.clamp(alpha + 0.25, 0, 0.99)
+        disc.BorderSizePixel = 0
+        disc.Parent = sg
+        Instance.new("UICorner", disc).CornerRadius = UDim.new(1, 0)
+        TweenService:Create(disc, TweenInfo.new(JUMP_LIFE, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            BackgroundTransparency = 1
         }):Play()
-    else
-        local segLen = (2 * math.pi * JUMP_RADIUS / JUMP_SEGMENTS) * 1.15
-        for i = 1, JUMP_SEGMENTS do
-            local ang = (i / JUMP_SEGMENTS) * math.pi * 2
-            local seg = makeCirclePart()
-            seg.Size = Vector3.new(0.05, 0.05, 0.05)
-            seg.CFrame = CFrame.new(pos)
-            seg.Color = color
-            seg.Transparency = baseTransparency
-            seg.Parent = circleFolder
-            parts[#parts + 1] = seg
-
-            local finalPos = pos + Vector3.new(math.cos(ang), 0, math.sin(ang)) * JUMP_RADIUS
-            TweenService:Create(seg, growInfo, {
-                Size = Vector3.new(segLen, 0.05, 0.14),
-                CFrame = CFrame.new(finalPos) * CFrame.Angles(0, -ang - math.rad(90), 0)  -- поворот по касательной, иначе сегменты торчат звёздой
-            }):Play()
-        end
     end
 
-    task.delay(0.5, function()
-        for _, p in ipairs(parts) do
-            TweenService:Create(p, TweenInfo.new(1, Enum.EasingStyle.Linear), {
-                Transparency = 1
-            }):Play()
-        end
-    end)
-    task.delay(1.6, function()
-        for _, p in ipairs(parts) do
-            if p and p.Parent then p:Destroy() end
-        end
+    -- жизнь круга как у шитаро: одним Quint-твином вырос И растворился
+    local info = TweenInfo.new(JUMP_LIFE, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    TweenService:Create(part, info, {
+        Size = Vector3.new(JUMP_DIAMETER, 0.01, JUMP_DIAMETER)
+    }):Play()
+    TweenService:Create(ring, info, { ImageTransparency = 1 }):Play()
+    task.delay(JUMP_LIFE + 0.2, function()
+        if part and part.Parent then part:Destroy() end
     end)
 end
 
@@ -600,7 +738,7 @@ local function bindJumpCircle(character)
             if root then
                 local r6Legs = hum.RigType == Enum.HumanoidRigType.R6 and 2 or 0  -- R6: HipHeight=0, ноги сами дают 2 studs
                 local feetY = root.Position.Y - root.Size.Y / 2 - hum.HipHeight - r6Legs + 0.05
-                spawnJumpCircle(Vector3.new(root.Position.X, feetY, root.Position.Z))
+                spawnJumpCircle(Vector3.new(root.Position.X, feetY, root.Position.Z), character)
             end
         end
     end)
@@ -639,7 +777,7 @@ tracerFolder.Parent = workspace
 -- цели, форс шот думает что везде стены и коридор не строится
 local rayBypass = false
 
--- ШИНА АИМА ДЛЯ ТРЕЙСЕРА: aimState/silentPoint объявлены НИЖЕ секции
+-- ШИНА АИМА ДЛЯ ТРЕЙСЕРА: aimState/gunHook.silentPoint объявлены НИЖЕ секции
 -- трейсера, upvalue из звукового детекта на них не замкнётся (ушло бы в
 -- глобалы и всегда nil). Поэтому кеш-циклы аима и FireServer-хук ПИШУТ
 -- сюда фактическую точку полёта пули, а детект выстрела трейсера читает.
@@ -720,14 +858,15 @@ local function computeHitPos(char, muzzle)
 end
 
 -- === детект выстрела ===
-local pendingShot = nil   -- { origin = BasePart, expires = number }
-local lastTracerAt = 0
+local aimRegs = {}  -- grouped: fix 'Out of local registers' (limit 200)
+aimRegs.pendingShot = nil   -- { origin = BasePart, expires = number }
+aimRegs.lastTracerAt = 0
 
 -- глушим родной луч выстрела игры, пока наш трассер работает:
 -- новые Beam в воркспейсе выключаем, свои не трогаем
-local suppressNative = false
+aimRegs.suppressNative = false
 workspace.DescendantAdded:Connect(function(obj)
-    if not suppressNative then return end
+    if not aimRegs.suppressNative then return end
     if obj:IsA("Beam") and not obj:IsDescendantOf(tracerFolder) then
         task.defer(function()
             if obj and obj.Parent then obj.Enabled = false end
@@ -744,9 +883,9 @@ local function watchToolSounds(tool)
         snd:GetPropertyChangedSignal("Playing"):Connect(function()
             if not snd.Playing then return end
             if not tracerState.Enabled then return end
-            if not pendingShot then return end
-            if tick() > pendingShot.expires then pendingShot = nil; return end
-            if tick() - lastTracerAt < TRACER_MIN_INTERVAL then return end
+            if not aimRegs.pendingShot then return end
+            if tick() > aimRegs.pendingShot.expires then aimRegs.pendingShot = nil; return end
+            if tick() - aimRegs.lastTracerAt < TRACER_MIN_INTERVAL then return end
 
             local char = LocalPlayer.Character
             -- звук должен быть нашим (внутри нашего персонажа) и в тулке
@@ -760,11 +899,11 @@ local function watchToolSounds(tool)
             if not inTool then return end
 
             -- выстрел реален: снимаем с ожидания и рисуем
-            lastTracerAt = tick()
-            local originPart = pendingShot.origin
-            pendingShot = nil
-            suppressNative = true
-            task.delay(0.25, function() suppressNative = false end)
+            aimRegs.lastTracerAt = tick()
+            local originPart = aimRegs.pendingShot.origin
+            aimRegs.pendingShot = nil
+            aimRegs.suppressNative = true
+            task.delay(0.25, function() aimRegs.suppressNative = false end)
 
             local muzzle = (originPart and originPart.Parent) and originPart.Position or nil
             if not muzzle and char then
@@ -803,9 +942,9 @@ UserInputService.InputBegan:Connect(function(input, gp)
     local handle = tool and tool:FindFirstChild("Handle")
     if not tool or not handle then return end
 
-    pendingShot = { origin = handle, expires = tick() + SHOT_WINDOW }
-    suppressNative = true
-    task.delay(SHOT_WINDOW + 0.25, function() suppressNative = false end)
+    aimRegs.pendingShot = { origin = handle, expires = tick() + SHOT_WINDOW }
+    aimRegs.suppressNative = true
+    task.delay(SHOT_WINDOW + 0.25, function() aimRegs.suppressNative = false end)
 end)
 
 -- хукаем все тулки персонажа: текущие и будущие
@@ -892,7 +1031,7 @@ end
 --    ни ошибок, ни дампов, полная тишина. Лечится таймаутом + task.cancel.
 --  ② Ответ мог иметь любую форму — старый парсер знал две; всё прочее
 --    молча давало 0 записей.
---  ③ table.clear(serverRoles) каждый тик: один сбойный/пустой ответ —
+--  ③ table.clear(roleDbg.serverRoles) каждый тик: один сбойный/пустой ответ —
 --    и роли стёрты, дальше снова «работает только по оружию».
 --  ④ Дампы формы были одноразовыми: первый ответ (лобби, пусто)
 --    печатался и больше диагностики не было никогда.
@@ -907,17 +1046,19 @@ end
 -- при каждом изменении, плюс скан Value-объектов у игроков вторым
 -- источником.
 -- ==========================================
-local scriptStartT = tick()
-local serverRoles = {}          -- [ник] = "Murderer"/"Sheriff"/"Innocent"/"Hero"
-local rolesEverParsed = false   -- хоть раз получили роли с сервера
-local shapeDumpT = 0            -- повторный дамп формы (раз в 30с до успеха)
-local probeWarnT = 0            -- варны «ремоут не найден» не чаще раза в 10с
-local emptyStreak = 0           -- пустых ответов подряд (сброс = конец раунда)
-local lastLoggedRoles = {}      -- [ник] = последняя залогированная роль
+local roleDbg = {}  -- grouped: fix 'Out of local registers' (limit 200)
+roleDbg.scriptStartT = tick()
+roleDbg.serverRoles = {}          -- [ник] = "Murderer"/"Sheriff"/"Innocent"/"Hero"
+roleDbg.rolesEverParsed = false   -- хоть раз получили роли с сервера
+roleDbg.shapeDumpT = 0            -- повторный дамп формы (раз в 30с до успеха)
+roleDbg.probeWarnT = 0            -- варны «ремоут не найден» не чаще раза в 10с
+roleDbg.emptyStreak = 0           -- пустых ответов подряд (сброс = конец раунда)
+roleDbg.lastLoggedRoles = {}      -- [ник] = последняя залогированная роль
 
 -- алиасы ролей: сервер может отдавать в другом регистре/склонении,
 -- а roleOf сравнивает напрямую с ключами chamsState.Roles
-local ROLE_ALIASES = {
+local roleCfg = {}  -- grouped: fix 'Out of local registers' (limit 200)
+roleCfg.ROLE_ALIASES = {
     murderer = "Murderer", murder = "Murderer", murd = "Murderer", killer = "Murderer",
     sheriff  = "Sheriff",  sherif = "Sheriff",  seriff = "Sheriff", detective = "Sheriff", det = "Sheriff",
     innocent = "Innocent", inno   = "Innocent", civilian = "Innocent", civil = "Innocent",
@@ -925,7 +1066,7 @@ local ROLE_ALIASES = {
     hero     = "Hero"
 }
 -- фаззи: «ROLE_Murderer», «MurdererTeam», «Убийца» и т.п. — по подстроке
-local ROLE_FUZZ = {
+roleCfg.ROLE_FUZZ = {
     { "murder", "Murderer" }, { "killer", "Murderer" }, { "убийц", "Murderer" },
     { "маньяк", "Murderer" }, { "килл", "Murderer" },
     { "sher", "Sheriff" }, { "detect", "Sheriff" }, { "шер", "Sheriff" },
@@ -938,9 +1079,9 @@ local ROLE_FUZZ = {
 local function normRole(r)
     if type(r) ~= "string" then return nil end
     local s = r:lower():gsub("%s+", "")
-    local a = ROLE_ALIASES[s]
+    local a = roleCfg.ROLE_ALIASES[s]
     if a then return a end
-    for _, f in ipairs(ROLE_FUZZ) do
+    for _, f in ipairs(roleCfg.ROLE_FUZZ) do
         if s:find(f[1], 1, true) then return f[2] end
     end
     return nil
@@ -1005,13 +1146,13 @@ end
 
 -- стили вызова ремоута: пустой вызов, с игроком, с UserId — серверные
 -- RemoteFunction бывают любые; рабочий стиль запоминается ПЕРВОМУ ремоуту
-local REMOTE_ARG_STYLES = {
+roleCfg.REMOTE_ARG_STYLES = {
     function(r) return r:InvokeServer() end,
     function(r) return r:InvokeServer(LocalPlayer) end,
     function(r) return r:InvokeServer(LocalPlayer.UserId) end,
 }
-local remoteStyles = setmetatable({}, { __mode = "k" })   -- [remote] = индекс стиля
-local remoteFails = setmetatable({}, { __mode = "k" })    -- [remote] = неудач подряд
+roleCfg.remoteStyles = setmetatable({}, { __mode = "k" })   -- [remote] = индекс стиля
+roleCfg.remoteFails = setmetatable({}, { __mode = "k" })    -- [remote] = неудач подряд
 
 -- InvokeServer — yield-функция: если сервер не отвечает, поток висит вечно.
 -- Крутим вызов в отдельном потоке с таймаутом: не ответил за 3с —
@@ -1021,7 +1162,7 @@ local function invokeRemote(remote)
     local function attempt(styleIdx)
         local done, ok, data = false, false, nil
         local th = task.spawn(function()
-            ok, data = pcall(REMOTE_ARG_STYLES[styleIdx], remote)
+            ok, data = pcall(roleCfg.REMOTE_ARG_STYLES[styleIdx], remote)
             done = true
         end)
         local t0 = os.clock()
@@ -1035,23 +1176,23 @@ local function invokeRemote(remote)
         return ok, data
     end
 
-    local known = remoteStyles[remote]
+    local known = roleCfg.remoteStyles[remote]
     if known then
         local ok, data = attempt(known)
         if ok and type(data) == "table" then
-            remoteFails[remote] = 0
+            roleCfg.remoteFails[remote] = 0
             return data
         end
-        remoteFails[remote] = (remoteFails[remote] or 0) + 1
-        if remoteFails[remote] < 5 then return nil end
-        remoteStyles[remote] = nil   -- стиль перестал работать — переищем
+        roleCfg.remoteFails[remote] = (roleCfg.remoteFails[remote] or 0) + 1
+        if roleCfg.remoteFails[remote] < 5 then return nil end
+        roleCfg.remoteStyles[remote] = nil   -- стиль перестал работать — переищем
     end
 
-    for idx = 1, #REMOTE_ARG_STYLES do
+    for idx = 1, #roleCfg.REMOTE_ARG_STYLES do
         local ok, data = attempt(idx)
         if ok and type(data) == "table" then
-            remoteStyles[remote] = idx
-            remoteFails[remote] = 0
+            roleCfg.remoteStyles[remote] = idx
+            roleCfg.remoteFails[remote] = 0
             return data
         end
     end
@@ -1060,25 +1201,25 @@ end
 
 -- запасные ремоуты: только RemoteFunction с именем Get*Data/Get*Player/
 -- Get*Role/Get*Game — чтение по конвенции, максимум 3 штуки
-local candidateRemotes, candidateT = nil, 0
-local candidateProbedT = {}
+roleCfg.candidateRemotes, roleCfg.candidateT = nil, 0
+roleCfg.candidateProbedT = {}
 local function collectRemoteCandidates()
-    if candidateRemotes and tick() - candidateT < 10 then return candidateRemotes end
-    candidateT = tick()
-    candidateRemotes = {}
+    if roleCfg.candidateRemotes and tick() - roleCfg.candidateT < 10 then return roleCfg.candidateRemotes end
+    roleCfg.candidateT = tick()
+    roleCfg.candidateRemotes = {}
     pcall(function()
         for _, d in ipairs(ReplicatedStorage:GetDescendants()) do
             if d:IsA("RemoteFunction") then
                 local ln = d.Name:lower()
                 if ln:sub(1, 3) == "get"
                     and (ln:find("data") or ln:find("role") or ln:find("player") or ln:find("game")) then
-                    table.insert(candidateRemotes, d)
-                    if #candidateRemotes >= 3 then break end
+                    table.insert(roleCfg.candidateRemotes, d)
+                    if #roleCfg.candidateRemotes >= 3 then break end
                 end
             end
         end
     end)
-    return candidateRemotes
+    return roleCfg.candidateRemotes
 end
 
 -- ключ/поле имени игрока → ник: строка, Player, UserId (число и строка),
@@ -1110,11 +1251,11 @@ local function playerExists(name)
 end
 
 -- внутри таблицы-игрока ищем поле имени (Name/Username/Player/…)
-local NAME_FIELDS = { "Name", "name", "Username", "username", "Player", "player",
+roleCfg.NAME_FIELDS = { "Name", "name", "Username", "username", "Player", "player",
     "PlayerName", "playerName", "Nick", "nick", "DisplayName", "Plr", "plr" }
 local function nameFromValue(v)
     if type(v) ~= "table" then return nil end
-    for _, f in ipairs(NAME_FIELDS) do
+    for _, f in ipairs(roleCfg.NAME_FIELDS) do
         local nv = v[f]
         if type(nv) == "string" and playerExists(nv) then return nv end
         if typeof(nv) == "Instance" and nv:IsA("Player") then return nv.Name end
@@ -1123,7 +1264,7 @@ local function nameFromValue(v)
 end
 
 -- поля, в которых может лежать роль (плюс булевы флаги и вложенные таблицы)
-local ROLE_FIELDS = { Role = true, role = true, PlayerRole = true, playerRole = true,
+roleCfg.ROLE_FIELDS = { Role = true, role = true, PlayerRole = true, playerRole = true,
     RoleName = true, roleName = true, Team = true, team = true, Job = true, job = true,
     Kind = true, kind = true, Mode = true, mode = true, Type = true, type = true,
     Rank = true, rank = true, State = true, state = true, GroupRole = true }
@@ -1131,7 +1272,7 @@ local function findRoleIn(v, depth)
     local t = type(v)
     if t == "string" then return normRole(v) end
     if t ~= "table" or depth > 3 then return nil end
-    for f in pairs(ROLE_FIELDS) do
+    for f in pairs(roleCfg.ROLE_FIELDS) do
         local r = normRole(v[f])
         if r then return r end
     end
@@ -1223,40 +1364,40 @@ local function applyParsed(found)
     local n = 0
     for _ in pairs(found) do n = n + 1 end
     if n >= 2 then
-        table.clear(serverRoles)
-        emptyStreak = 0
+        table.clear(roleDbg.serverRoles)
+        roleDbg.emptyStreak = 0
     elseif n == 1 then
-        emptyStreak = 0
+        roleDbg.emptyStreak = 0
     else
-        emptyStreak = emptyStreak + 1
-        if emptyStreak >= 12 and next(serverRoles) then
-            table.clear(serverRoles)
-            table.clear(lastLoggedRoles)
+        roleDbg.emptyStreak = roleDbg.emptyStreak + 1
+        if roleDbg.emptyStreak >= 12 and next(roleDbg.serverRoles) then
+            table.clear(roleDbg.serverRoles)
+            table.clear(roleDbg.lastLoggedRoles)
             print("[PERMABAN] роли сброшены: сервер перестал отдавать данные (раунд кончился?)")
         end
     end
     for name, role in pairs(found) do
-        serverRoles[name] = role
+        roleDbg.serverRoles[name] = role
     end
-    for name in pairs(serverRoles) do
+    for name in pairs(roleDbg.serverRoles) do
         if not Players:FindFirstChild(name) then
-            serverRoles[name] = nil
-            lastLoggedRoles[name] = nil
+            roleDbg.serverRoles[name] = nil
+            roleDbg.lastLoggedRoles[name] = nil
         end
     end
     for _, pl in ipairs(Players:GetPlayers()) do
-        local r = serverRoles[pl.Name]
-        if r and lastLoggedRoles[pl.Name] ~= r then
-            lastLoggedRoles[pl.Name] = r
+        local r = roleDbg.serverRoles[pl.Name]
+        if r and roleDbg.lastLoggedRoles[pl.Name] ~= r then
+            roleDbg.lastLoggedRoles[pl.Name] = r
             print("[PERMABAN] сервер: " .. pl.Name .. " → " .. r)
         end
     end
-    if n > 0 then rolesEverParsed = true end
+    if n > 0 then roleDbg.rolesEverParsed = true end
 end
 
 -- источник 2: Value-объекты у игроков (PlayerData/Data/Stats/… —
 -- StringValue с ролью в значении или имени, BoolValue Murderer=true)
-local ROLE_VALUE_FOLDERS = { "PlayerData", "Data", "Stats", "Info", "RoleData",
+roleCfg.ROLE_VALUE_FOLDERS = { "PlayerData", "Data", "Stats", "Info", "RoleData",
     "RoundData", "leaderstats" }
 local function rolesFromValues()
     local found = {}
@@ -1282,7 +1423,7 @@ local function rolesFromValues()
                     end
                 end
             end
-            for _, fn in ipairs(ROLE_VALUE_FOLDERS) do
+            for _, fn in ipairs(roleCfg.ROLE_VALUE_FOLDERS) do
                 local f = pl:FindFirstChild(fn)
                 if f then look(f) end
             end
@@ -1300,12 +1441,12 @@ end
 -- пробуем запасные ремоуты: если основной не найден ЛИБО пока роли
 -- ни разу не спарсились и прошло >45с от старта
 local function probeCandidates()
-    if rolesEverParsed then return end
-    if tick() - scriptStartT < 45 then return end
+    if roleDbg.rolesEverParsed then return end
+    if tick() - roleDbg.scriptStartT < 45 then return end
     for _, cand in ipairs(collectRemoteCandidates()) do
         local cpath = cand:GetFullName()
-        if not candidateProbedT[cpath] or tick() - candidateProbedT[cpath] > 30 then
-            candidateProbedT[cpath] = tick()
+        if not roleCfg.candidateProbedT[cpath] or tick() - roleCfg.candidateProbedT[cpath] > 30 then
+            roleCfg.candidateProbedT[cpath] = tick()
             local cdata = invokeRemote(cand)
             if type(cdata) == "table" then
                 print("[PERMABAN] roles probe: запасной ремоут " .. cpath
@@ -1314,7 +1455,7 @@ local function probeCandidates()
                 local cn = 0
                 for _ in pairs(cfound) do cn = cn + 1 end
                 if cn > 0 then
-                    rolesEverParsed = true
+                    roleDbg.rolesEverParsed = true
                     print("[PERMABAN] серверные роли ЗАРАБОТАЛИ через " .. cpath
                         .. ": " .. cn .. " → " .. HttpService:JSONEncode(cfound))
                 end
@@ -1329,8 +1470,8 @@ local function updateServerRoles()
     if not clientAlive() then return end
     local remote, path = findDataRemote()
     if not remote then
-        if tick() - probeWarnT > 10 then
-            probeWarnT = tick()
+        if tick() - roleDbg.probeWarnT > 10 then
+            roleDbg.probeWarnT = tick()
             -- разовый список кандидатов: вдруг ремоут называется иначе
             local names = {}
             pcall(function()
@@ -1352,8 +1493,8 @@ local function updateServerRoles()
     if type(data) ~= "table" then
         -- валидного ответа НЕТ: роли НЕ трогаем (сбой сети/висящий вызов
         -- не должен стирать то, что уже знаем). Дамп повторяется каждые 30с
-        if not rolesEverParsed and tick() - shapeDumpT > 30 then
-            shapeDumpT = tick()
+        if not roleDbg.rolesEverParsed and tick() - roleDbg.shapeDumpT > 30 then
+            roleDbg.shapeDumpT = tick()
             print("[PERMABAN] roles probe: " .. path
                 .. " не отвечает таблицей (висит/ошибка/мусор) — повторяю каждые 30с")
         end
@@ -1361,16 +1502,16 @@ local function updateServerRoles()
         return
     end
 
-    if not rolesEverParsed and tick() - shapeDumpT > 30 then
-        shapeDumpT = tick()
+    if not roleDbg.rolesEverParsed and tick() - roleDbg.shapeDumpT > 30 then
+        roleDbg.shapeDumpT = tick()
         print("[PERMABAN] roles probe: " .. path .. " ответил: " .. dumpShape(data))
     end
 
     local found = deepParseRoles(data)
     local n = 0
     for _ in pairs(found) do n = n + 1 end
-    if n > 0 and not rolesEverParsed then
-        rolesEverParsed = true
+    if n > 0 and not roleDbg.rolesEverParsed then
+        roleDbg.rolesEverParsed = true
         print("[PERMABAN] серверные роли ЗАРАБОТАЛИ (" .. path .. "): " .. n
             .. " → " .. HttpService:JSONEncode(found))
     end
@@ -1413,7 +1554,7 @@ end)
 -- роль ТОЛЬКО с сервера (v2.35): нет записи — нет подсветки.
 -- Никаких дефолтных «Innocent» и сканов рюкзака — единый источник
 local function roleOf(pl)
-    return serverRoles[pl.Name]
+    return roleDbg.serverRoles[pl.Name]
 end
 
 -- v2.35: оружейные вачеры ролей удалены (хедшот: роли — только с сервера).
@@ -1667,7 +1808,7 @@ end
 -- повороты предсказываются через когерентность направления (dir_stats),
 -- вертикаль — честная дуга с гравитацией и клампом по полу (ground_below).
 -- ==========================================
-local AIM_P = {
+aimRegs.AIM_P = {
     ring = 48,          -- размер кольца позиций/направлений
     acc_t = 0.15,       -- время форса ускорения, сек
     acc_max = 280,      -- кап ускорения, студы/с²
@@ -1678,69 +1819,69 @@ local AIM_P = {
     clearance = 2.2     -- зазор ног над полом для клампа
 }
 
-local snapT, snapP = {}, {}
-local snapN, snapI = 0, 0
-local SK = { n = 0, i = 0, t = {}, dx = {}, dz = {} }
-local aimKin = { ok = false, ax = 0, az = 0, smax = 0 }
-local aimTR = { ready = false, vel = Vector3.zero, air = false,
+aimRegs.snapT, aimRegs.snapP = {}, {}
+aimRegs.snapN, aimRegs.snapI = 0, 0
+aimRegs.SK = { n = 0, i = 0, t = {}, dx = {}, dz = {} }
+aimRegs.aimKin = { ok = false, ax = 0, az = 0, smax = 0 }
+aimRegs.aimTR = { ready = false, vel = Vector3.zero, air = false,
     air_since = 0, jumping = false, time = 0, gap = 0.033,
     gbase = 0, gseen = false, spoof = 0 }  -- зазор ноги-пол (GC шитаро)
                                            -- + счётчик подмены скорости
-local aimTargetPart = nil
+aimRegs.aimTargetPart = nil
 local aimStep = 0.033   -- сглаженный шаг сэмплинга (EC.step шитаро)
 
 local function aimClear()
-    snapN, snapI = 0, 0
-    SK.n, SK.i = 0, 0
-    aimKin.ok = false
-    aimKin.ax, aimKin.az, aimKin.smax = 0, 0, 0
-    aimTR.ready = false
-    aimTR.vel = Vector3.zero
-    aimTR.air = false
-    aimTR.jumping = false
-    aimTR.air_since = 0
-    aimTR.gbase, aimTR.gseen = 0, false
-    aimTR.spoof = 0
-    aimTargetPart = nil
+    aimRegs.snapN, aimRegs.snapI = 0, 0
+    aimRegs.SK.n, aimRegs.SK.i = 0, 0
+    aimRegs.aimKin.ok = false
+    aimRegs.aimKin.ax, aimRegs.aimKin.az, aimRegs.aimKin.smax = 0, 0, 0
+    aimRegs.aimTR.ready = false
+    aimRegs.aimTR.vel = Vector3.zero
+    aimRegs.aimTR.air = false
+    aimRegs.aimTR.jumping = false
+    aimRegs.aimTR.air_since = 0
+    aimRegs.aimTR.gbase, aimRegs.aimTR.gseen = 0, false
+    aimRegs.aimTR.spoof = 0
+    aimRegs.aimTargetPart = nil
 end
 
 local function sampleSpan()
-    local span = math.max(aimStep, aimTR.gap)
+    local span = math.max(aimStep, aimRegs.aimTR.gap)
     if span <= 0 then return 0 end
     return span
 end
 
 local function snapPush(now, pos)
-    snapI = snapI % AIM_P.ring + 1
-    snapT[snapI] = now
-    snapP[snapI] = pos
-    if snapN < AIM_P.ring then snapN = snapN + 1 end
+    aimRegs.snapI = aimRegs.snapI % aimRegs.AIM_P.ring + 1
+    aimRegs.snapT[aimRegs.snapI] = now
+    aimRegs.snapP[aimRegs.snapI] = pos
+    if aimRegs.snapN < aimRegs.AIM_P.ring then aimRegs.snapN = aimRegs.snapN + 1 end
 end
 
 local function snapGet(k)
-    local idx = (snapI - k - 1) % AIM_P.ring + 1
-    return snapT[idx], snapP[idx]
+    local idx = (aimRegs.snapI - k - 1) % aimRegs.AIM_P.ring + 1
+    return aimRegs.snapT[idx], aimRegs.snapP[idx]
 end
 
 local function velPush(now, hx, hz)
-    SK.i = SK.i % AIM_P.ring + 1
-    SK.t[SK.i] = now
-    SK.dx[SK.i] = hx
-    SK.dz[SK.i] = hz
-    if SK.n < AIM_P.ring then SK.n = SK.n + 1 end
+    aimRegs.SK.i = aimRegs.SK.i % aimRegs.AIM_P.ring + 1
+    aimRegs.SK.t[aimRegs.SK.i] = now
+    aimRegs.SK.dx[aimRegs.SK.i] = hx
+    aimRegs.SK.dz[aimRegs.SK.i] = hz
+    if aimRegs.SK.n < aimRegs.AIM_P.ring then aimRegs.SK.n = aimRegs.SK.n + 1 end
 end
 
 -- квадратичная регрессия X/Z по кольцу (fit_kin шитаро): решает
 -- 3x3-систему нормальных уравнений, вытаскивает скорость и ускорение
 local function fitKin()
-    if snapN < 5 then return nil end
+    if aimRegs.snapN < 5 then return nil end
     local t0 = snapGet(0)
     local win = math.max(sampleSpan() * 5, 0.12)
     local scale = win
     local n, s1, s2, s3, s4 = 0, 0, 0, 0, 0
     local bx0, bx1, bx2 = 0, 0, 0
     local bz0, bz1, bz2 = 0, 0, 0
-    for k = 0, snapN - 1 do
+    for k = 0, aimRegs.snapN - 1 do
         local t, p = snapGet(k)
         local age = t0 - t
         if age > win then break end
@@ -1785,47 +1926,47 @@ end
 local function kinUpdate()
     local kv, ka = fitKin()
     if not kv then
-        aimKin.ok = false
-        aimKin.ax, aimKin.az = 0, 0
+        aimRegs.aimKin.ok = false
+        aimRegs.aimKin.ax, aimRegs.aimKin.az = 0, 0
         return
     end
-    aimKin.ok = true
+    aimRegs.aimKin.ok = true
     local sp = math.sqrt(kv.X * kv.X + kv.Z * kv.Z)
-    if sp > aimKin.smax then
-        aimKin.smax = sp
+    if sp > aimRegs.aimKin.smax then
+        aimRegs.aimKin.smax = sp
     else
-        aimKin.smax = aimKin.smax * 0.985 + sp * 0.015
+        aimRegs.aimKin.smax = aimRegs.aimKin.smax * 0.985 + sp * 0.015
     end
-    if ka and not aimTR.air then
+    if ka and not aimRegs.aimTR.air then
         local am = math.sqrt(ka.X * ka.X + ka.Z * ka.Z)
         local ax, az = ka.X, ka.Z
-        if am > AIM_P.acc_max and am > 0 then
-            ax = ax * AIM_P.acc_max / am
-            az = az * AIM_P.acc_max / am
+        if am > aimRegs.AIM_P.acc_max and am > 0 then
+            ax = ax * aimRegs.AIM_P.acc_max / am
+            az = az * aimRegs.AIM_P.acc_max / am
         end
-        if am < AIM_P.acc_min then
+        if am < aimRegs.AIM_P.acc_min then
             ax, az = 0, 0
         end
-        aimKin.ax, aimKin.az = ax, az
+        aimRegs.aimKin.ax, aimRegs.aimKin.az = ax, az
     else
-        aimKin.ax, aimKin.az = 0, 0
+        aimRegs.aimKin.ax, aimRegs.aimKin.az = 0, 0
     end
 end
 
 -- когерентность направления и угловая скорость поворота (dir_stats шитаро):
 -- насколько прямолинейно бежит цель и с какой скоростью крутится
 local function dirStats(win)
-    if SK.n < 4 then return 1, 0 end
+    if aimRegs.SK.n < 4 then return 1, 0 end
     win = math.max(win, sampleSpan() * 3)
-    local newest = SK.t[SK.i]
+    local newest = aimRegs.SK.t[aimRegs.SK.i]
     local sx, sz, n = 0, 0, 0
     local prev, turn, turn_n = nil, 0, 0
     local oldest = newest
-    for k = 0, SK.n - 1 do
-        local idx = (SK.i - k - 1) % AIM_P.ring + 1
-        local t = SK.t[idx]
+    for k = 0, aimRegs.SK.n - 1 do
+        local idx = (aimRegs.SK.i - k - 1) % aimRegs.AIM_P.ring + 1
+        local t = aimRegs.SK.t[idx]
         if newest - t > win then break end
-        local hx, hz = SK.dx[idx], SK.dz[idx]
+        local hx, hz = aimRegs.SK.dx[idx], aimRegs.SK.dz[idx]
         local m = math.sqrt(hx * hx + hz * hz)
         if m > 0 then
             sx = sx + hx / m
@@ -1860,8 +2001,8 @@ end
 
 -- пол под экстраполированной точкой (ground_below шитаро): чтобы дуга
 -- прыжка не уводила прицел под землю
-local aimGroundParams = RaycastParams.new()
-aimGroundParams.FilterType = Enum.RaycastFilterType.Exclude
+aimRegs.aimGroundParams = RaycastParams.new()
+aimRegs.aimGroundParams.FilterType = Enum.RaycastFilterType.Exclude
 local function groundBelow(pos, reach, targetChar)
     local f = {}
     local n = 0
@@ -1869,9 +2010,9 @@ local function groundBelow(pos, reach, targetChar)
     local mine = LocalPlayer.Character
     if mine then n = n + 1 f[n] = mine end
     if tracerFolder then n = n + 1 f[n] = tracerFolder end
-    aimGroundParams.FilterDescendantsInstances = f
+    aimRegs.aimGroundParams.FilterDescendantsInstances = f
     rayBypass = true
-    local okR, res = pcall(workspace.Raycast, workspace, pos, Vector3.new(0, -reach, 0), aimGroundParams)
+    local okR, res = pcall(workspace.Raycast, workspace, pos, Vector3.new(0, -reach, 0), aimRegs.aimGroundParams)
     rayBypass = false
     if okR and res then return res.Position.Y end
     return nil
@@ -1881,20 +2022,20 @@ end
 -- вертикаль — дуга с modeled-прыжком и клампом по полу
 local function predictFrom(base, span, now, targetChar)
     local g = workspace.Gravity or 196.2
-    local fh = Vector3.new(aimTR.vel.X, 0, aimTR.vel.Z)
+    local fh = Vector3.new(aimRegs.aimTR.vel.X, 0, aimRegs.aimTR.vel.Z)
     local x, z
-    if span > 0 and aimKin.ok then
+    if span > 0 and aimRegs.aimKin.ok then
         -- ветка ускорения: экcтраполируем v(t) = v0 + a*t с капами
-        local age = math.clamp(now - aimTR.time, 0, sampleSpan() * 2)
-        local ax, az = aimKin.ax, aimKin.az
-        if aimTR.air or math.sqrt(ax * ax + az * az) < AIM_P.acc_min then ax, az = 0, 0 end
+        local age = math.clamp(now - aimRegs.aimTR.time, 0, sampleSpan() * 2)
+        local ax, az = aimRegs.aimKin.ax, aimRegs.aimKin.az
+        if aimRegs.aimTR.air or math.sqrt(ax * ax + az * az) < aimRegs.AIM_P.acc_min then ax, az = 0, 0 end
         local vx = fh.X + ax * age
         local vz = fh.Z + az * age
-        local ta = math.min(span, AIM_P.acc_t)
+        local ta = math.min(span, aimRegs.AIM_P.acc_t)
         local dx = vx * span + 0.5 * ax * ta * ta
         local dz = vz * span + 0.5 * az * ta * ta
         local reach = math.sqrt(dx * dx + dz * dz)
-        local cap = math.max(aimKin.smax * AIM_P.speed_head, AIM_P.speed_floor) * span
+        local cap = math.max(aimRegs.aimKin.smax * aimRegs.AIM_P.speed_head, aimRegs.AIM_P.speed_floor) * span
         if reach > cap and reach > 1e-6 then
             dx = dx * cap / reach
             dz = dz * cap / reach
@@ -1905,7 +2046,7 @@ local function predictFrom(base, span, now, targetChar)
         -- ветка когерентности: цель крутится — поворачиваем вектор движения
         -- на половину угловой скорости * время, дистанцию жмём по доверию
         local hspan = span
-        if span > 0 and fh.Magnitude > 0 and not aimTR.air then
+        if span > 0 and fh.Magnitude > 0 and not aimRegs.aimTR.air then
             local coh, omega = dirStats(span)
             local conf = math.clamp(coh, 0, 1)
             if omega ~= 0 then
@@ -1916,22 +2057,22 @@ local function predictFrom(base, span, now, targetChar)
         x = base.X + fh.X * hspan
         z = base.Z + fh.Z * hspan
     end
-    local y = base.Y + aimTR.vel.Y * 0.05
-    if aimTR.air and span > 0 then
+    local y = base.Y + aimRegs.aimTR.vel.Y * 0.05
+    if aimRegs.aimTR.air and span > 0 then
         -- честная дуга: modeled-прыжок сильнее фактической скорости в начале
-        local vy = aimTR.vel.Y
-        local phase = math.max(0, now - aimTR.air_since)
-        local modeled = AIM_P.jump_v - g * phase
-        if aimTR.jumping and AIM_P.jump_v > 0 and g > 0
-            and phase <= AIM_P.jump_v / g and modeled > vy then
+        local vy = aimRegs.aimTR.vel.Y
+        local phase = math.max(0, now - aimRegs.aimTR.air_since)
+        local modeled = aimRegs.AIM_P.jump_v - g * phase
+        if aimRegs.aimTR.jumping and aimRegs.AIM_P.jump_v > 0 and g > 0
+            and phase <= aimRegs.AIM_P.jump_v / g and modeled > vy then
             vy = modeled
         end
         y = base.Y + vy * span - 0.5 * g * span * span
         if y < base.Y then
-            local reach = base.Y - y + AIM_P.clearance
+            local reach = base.Y - y + aimRegs.AIM_P.clearance
             local gy = groundBelow(Vector3.new(x, base.Y, z), reach, targetChar)
             if gy then
-                local floorY = gy + AIM_P.clearance
+                local floorY = gy + aimRegs.AIM_P.clearance
                 if y < floorY then y = floorY end
             end
         end
@@ -1959,9 +2100,9 @@ task.spawn(function()
             if not head then
                 aimClear()
             else
-                if head ~= aimTargetPart then
+                if head ~= aimRegs.aimTargetPart then
                     aimClear()
-                    aimTargetPart = head
+                    aimRegs.aimTargetPart = head
                 end
                 -- воздух/прыжок цели: гуманоид-стейт + рейкаст под ногами
                 -- (шитаро track_fresh 2880): стейт с сервера запаздывает,
@@ -1971,42 +2112,42 @@ task.spawn(function()
                     local st = thum:GetState()
                     local airNow = st == Enum.HumanoidStateType.Freefall
                         or st == Enum.HumanoidStateType.Jumping
-                    if airNow and not aimTR.air then aimTR.air_since = now end
+                    if airNow and not aimRegs.aimTR.air then aimRegs.aimTR.air_since = now end
                     local tchar = head.Parent
                     local hrpA = tchar and tchar:FindFirstChild("HumanoidRootPart")
                     if hrpA then
-                        local reach = AIM_P.clearance + 6
-                            + math.abs(aimTR.vel.Y) * sampleSpan() * 4
+                        local reach = aimRegs.AIM_P.clearance + 6
+                            + math.abs(aimRegs.aimTR.vel.Y) * sampleSpan() * 4
                         local gy = groundBelow(hrpA.Position, reach, tchar)
                         if gy then
                             local clr = hrpA.Position.Y - gy
-                            if not airNow and math.abs(aimTR.vel.Y) < 1 then
-                                if aimTR.gseen then
-                                    if clr < aimTR.gbase then
-                                        aimTR.gbase = aimTR.gbase * 0.7 + clr * 0.3
+                            if not airNow and math.abs(aimRegs.aimTR.vel.Y) < 1 then
+                                if aimRegs.aimTR.gseen then
+                                    if clr < aimRegs.aimTR.gbase then
+                                        aimRegs.aimTR.gbase = aimRegs.aimTR.gbase * 0.7 + clr * 0.3
                                     else
-                                        aimTR.gbase = aimTR.gbase * 0.98 + clr * 0.02
+                                        aimRegs.aimTR.gbase = aimRegs.aimTR.gbase * 0.98 + clr * 0.02
                                     end
                                 else
-                                    aimTR.gbase = clr
-                                    aimTR.gseen = true
+                                    aimRegs.aimTR.gbase = clr
+                                    aimRegs.aimTR.gseen = true
                                 end
                             end
-                            local floorClr = aimTR.gseen and aimTR.gbase or AIM_P.clearance
+                            local floorClr = aimRegs.aimTR.gseen and aimRegs.aimTR.gbase or aimRegs.AIM_P.clearance
                             local tol = math.max(floorClr * 0.35, 1)
                             if clr > floorClr + tol then airNow = true end
                         else
                             airNow = true   -- под ногами пола нет — в воздухе
                         end
                     end
-                    aimTR.air = airNow
-                    aimTR.jumping = st == Enum.HumanoidStateType.Jumping
+                    aimRegs.aimTR.air = airNow
+                    aimRegs.aimTR.jumping = st == Enum.HumanoidStateType.Jumping
                 end
-                -- gap между сэмплами + направление в SK-кольцо
-                if snapN > 0 then
+                -- gap между сэмплами + направление в aimRegs.SK-кольцо
+                if aimRegs.snapN > 0 then
                     local _, prevPos = snapGet(0)
-                    local g2 = math.clamp(now - snapT[snapI], 0.005, 0.5)
-                    aimTR.gap = g2
+                    local g2 = math.clamp(now - aimRegs.snapT[aimRegs.snapI], 0.005, 0.5)
+                    aimRegs.aimTR.gap = g2
                     local d = head.Position - prevPos
                     if g2 > 0.001 then
                         velPush(now, d.X / g2, d.Z / g2)
@@ -2019,11 +2160,11 @@ task.spawn(function()
                 -- позиции (десынк/спуф цели) — движку не верим совсем,
                 -- предикт держится на регрессии по позиции
                 local hrp = head.Parent and head.Parent:FindFirstChild("HumanoidRootPart")
-                if hrp and not aimTR.air then
+                if hrp and not aimRegs.aimTR.air then
                     local okE, ev = pcall(function() return hrp.AssemblyLinearVelocity end)
                     if okE and typeof(ev) == "Vector3" then
                         local eh = Vector3.new(ev.X, 0, ev.Z)
-                        local pv = Vector3.new(aimTR.vel.X, 0, aimTR.vel.Z)
+                        local pv = Vector3.new(aimRegs.aimTR.vel.X, 0, aimRegs.aimTR.vel.Z)
                         local em, pm = eh.Magnitude, pv.Magnitude
                         local trust
                         if em < 1 and pm < 1 then
@@ -2036,19 +2177,19 @@ task.spawn(function()
                             trust = false
                         end
                         if trust then
-                            aimTR.spoof = math.max(0, aimTR.spoof - 1)
-                            aimTR.vel = Vector3.new(ev.X, ev.Y, ev.Z)
-                        elseif aimTR.spoof < 20 then
-                            aimTR.spoof = aimTR.spoof + 1
+                            aimRegs.aimTR.spoof = math.max(0, aimRegs.aimTR.spoof - 1)
+                            aimRegs.aimTR.vel = Vector3.new(ev.X, ev.Y, ev.Z)
+                        elseif aimRegs.aimTR.spoof < 20 then
+                            aimRegs.aimTR.spoof = aimRegs.aimTR.spoof + 1
                         end
                     end
                 end
-                aimTR.time = now
+                aimRegs.aimTR.time = now
                 kinUpdate()
                 local kv = fitKin()
                 if kv then
-                    aimTR.vel = kv
-                    aimTR.ready = true
+                    aimRegs.aimTR.vel = kv
+                    aimRegs.aimTR.ready = true
                 end
             end
         end
@@ -2075,27 +2216,27 @@ end
 -- общим упреждением и отдаёт первую с чистой линией огня — голова
 -- за углом больше не означает гарантированный промах
 -- ==========================================
-local AIM_HIT_NAMES = {
+aimRegs.AIM_HIT_NAMES = {
     "HumanoidRootPart", "UpperTorso", "Torso", "LowerTorso", "Head",
     "Right Arm", "Left Arm", "RightUpperArm", "LeftUpperArm",
     "Right Leg", "Left Leg", "RightLowerLeg", "LeftLowerLeg",
 }
-local aimTraceParams = RaycastParams.new()
-aimTraceParams.FilterType = Enum.RaycastFilterType.Exclude
-local aimTaggedList = {}
-local aimTagTime = 0
+aimRegs.aimTraceParams = RaycastParams.new()
+aimRegs.aimTraceParams.FilterType = Enum.RaycastFilterType.Exclude
+aimRegs.aimTaggedList = {}
+aimRegs.aimTagTime = 0
 
 -- трассировка с пропуском прозрачного (шитаро trace): список игнора
 -- растёт на каждую прозрачную парту, максимум 6 отскоков
 local function aimTrace(origin, dir)
     local nowc = os.clock()
-    if nowc - aimTagTime > 0.5 then
-        aimTagTime = nowc
+    if nowc - aimRegs.aimTagTime > 0.5 then
+        aimRegs.aimTagTime = nowc
         pcall(function()
             local tagged = game:GetService("CollectionService"):GetTagged("WeaponPassthrough")
-            table.clear(aimTaggedList)
+            table.clear(aimRegs.aimTaggedList)
             if type(tagged) == "table" then
-                for i = 1, #tagged do aimTaggedList[i] = tagged[i] end
+                for i = 1, #tagged do aimRegs.aimTaggedList[i] = tagged[i] end
             end
         end)
     end
@@ -2107,13 +2248,13 @@ local function aimTrace(origin, dir)
     local mine = LocalPlayer.Character
     if mine then n = n + 1 f[n] = mine end
     if tracerFolder then n = n + 1 f[n] = tracerFolder end
-    for i = 1, #aimTaggedList do f[n + i] = aimTaggedList[i] end
+    for i = 1, #aimRegs.aimTaggedList do f[n + i] = aimRegs.aimTaggedList[i] end
     rayBypass = true
     local org, left = origin, dist
     local res = nil
     for _ = 1, 6 do
-        aimTraceParams.FilterDescendantsInstances = f
-        local okR, r = pcall(workspace.Raycast, workspace, org, unit * left, aimTraceParams)
+        aimRegs.aimTraceParams.FilterDescendantsInstances = f
+        local okR, r = pcall(workspace.Raycast, workspace, org, unit * left, aimRegs.aimTraceParams)
         if not okR or not r then
             res = nil
             break
@@ -2161,7 +2302,7 @@ local function pickPoint(origin, head)
     if not tchar then return nil end
     local off = Vector3.zero
     local hrp = tchar:FindFirstChild("HumanoidRootPart")
-    if hrp and aimTR.ready then
+    if hrp and aimRegs.aimTR.ready then
         local span = (aimState.Predict or 0) + (aimState.PingPredict and leadTime() or 0)
         if span > 0.001 then
             local okP, shifted = pcall(predictFrom, hrp.Position, span, os.clock(), tchar)
@@ -2170,8 +2311,8 @@ local function pickPoint(origin, head)
     end
     local first = nil
     local scanned = 0
-    for i = 1, #AIM_HIT_NAMES do
-        local part = tchar:FindFirstChild(AIM_HIT_NAMES[i])
+    for i = 1, #aimRegs.AIM_HIT_NAMES do
+        local part = tchar:FindFirstChild(aimRegs.AIM_HIT_NAMES[i])
         if part and part:IsA("BasePart") then
             local pt = part.Position + off
             if not first then first = pt end
@@ -2443,17 +2584,18 @@ end)
 -- поэтому один Raycast-хук у пистолета мог не работать. Теперь хук
 -- ловит и FireServer у remote’ов с shoot/throw в имени и разворачивает
 -- Vector3/CFrame-аргументы в упреждённую точку цели.
-local silentPoint, silentOrigin = nil, nil              -- пистолет
-local forceOriginCF, forceAimCF = nil, nil               -- форс шот (коридор)
-local inHook = false
-local silentRemoteLogged = false   -- печатаем имя перехваченного remote один раз
--- пока os.clock() < desyncSafeUntil, Velocity Desync не работает:
+local gunHook = {}  -- grouped: fix 'Out of local registers' (limit 200)
+gunHook.silentPoint, gunHook.silentOrigin = nil, nil              -- пистолет
+gunHook.forceOriginCF, gunHook.forceAimCF = nil, nil               -- форс шот (коридор)
+gunHook.inHook = false
+gunHook.silentRemoteLogged = false   -- печатаем имя перехваченного remote один раз
+-- пока os.clock() < gunHook.desyncSafeUntil, Velocity Desync не работает:
 -- выстрел (FireServer shoot) и подмена скорости не должны совпадать
-local desyncSafeUntil = 0
+gunHook.desyncSafeUntil = 0
 
 -- состояние автозалпа (шитаро S.fire_gap / last_shot): bypass объявлен
 -- ДО хука ниже — наш прямой FireServer сам хук не переписывает
-local autoFire = {
+gunHook.autoFire = {
     lastShot = 0,
     gap = 0,          -- выученный реальный кулдаун выстрела, сек
     gapSeen = false,
@@ -2463,26 +2605,162 @@ local autoFire = {
 -- кэш цели для сайлента пистолета. Условие (Enabled ИЛИ AutoShoot):
 -- автозалпу нужен тот же кэш, даже когда Sheriff-аим выключен
 RunService.RenderStepped:Connect(function()
-    silentPoint, silentOrigin = nil, nil
+    gunHook.silentPoint, gunHook.silentOrigin = nil, nil
     AIMBUS.enabled, AIMBUS.point = false, nil
     if not clientAlive() then return end
     if not (aimState.Enabled or aimState.AutoShoot) then return end
     if not localHasGun() then return end
     local head = nearestTargetHead(true, aimState.Distance)
     if head then
-        silentPoint = predictPoint(head, aimState.Predict, aimState.PingPredict)
+        gunHook.silentPoint = predictPoint(head, aimState.Predict, aimState.PingPredict)
         local char = LocalPlayer.Character
         local hd = char and char:FindFirstChild("Head")
-        silentOrigin = hd and hd.Position or nil
+        gunHook.silentOrigin = hd and hd.Position or nil
         -- LOS-подбор части тела (шитаро pick_point 3304): голова за
         -- стеной, а корпус на линии огня — целимся в корпус
-        if silentOrigin then
-            local picked = pickPoint(silentOrigin, head)
-            if picked then silentPoint = picked end
+        if gunHook.silentOrigin then
+            local picked = pickPoint(gunHook.silentOrigin, head)
+            if picked then gunHook.silentPoint = picked end
         end
-        AIMBUS.enabled, AIMBUS.point = true, silentPoint
+        AIMBUS.enabled, AIMBUS.point = true, gunHook.silentPoint
     end
 end)
+
+-- ==========================================
+-- 3I. KILL AURA (окно MURDERER) — из дампа шитаро (shit.lua 3838-4007):
+-- нож экипируется сам, раз в тик KnifeStabbed:FireServer() и на каждую
+-- жертву HandleTouched:FireServer(part). "Kill aura" — игроки в радиусе
+-- (слайдер 5-60), "Kill all" — все игроки. Роль мардера: модуль
+-- Modules/CurrentRoundClient -> PlayerData[ник].Role == "Murderer"
+-- и не Dead (как в шитаро), фолбэк — наш серверный парсер GetPlayerData.
+-- Кулдаун 0.05с между залпами (как в шитаро last_kill)
+-- ==========================================
+local auraState = { Enabled = false, KillAll = false, Distance = 30, AutoKnife = true, Refresh = nil }
+do
+    local auraRoundMod = nil
+    local amMurderer = false
+    local lastKill = 0
+    local victims = {}
+
+    local function auraRequireRound()
+        local mods = ReplicatedStorage:FindFirstChild("Modules")
+        local m = mods and mods:FindFirstChild("CurrentRoundClient")
+        if not m then return nil end
+        local ok, res = pcall(require, m)
+        if not ok or type(res) ~= "table" then return nil end
+        return res
+    end
+
+    local function refreshMurderer()
+        if not auraRoundMod then auraRoundMod = auraRequireRound() end
+        local data = auraRoundMod and auraRoundMod.PlayerData
+        if type(data) ~= "table" then
+            -- фолбэк: роль из нашего GetPlayerData-парсера
+            local ok, role = pcall(roleOf, LocalPlayer)
+            amMurderer = ok and role == "Murderer"
+            return
+        end
+        local me = data[LocalPlayer.Name]
+        amMurderer = (me ~= nil and me.Role == "Murderer" and not me.Dead)
+    end
+
+    -- get_knife шитаро 3870: нож в руках или в рюкзаке
+    local function getKnife()
+        local char = LocalPlayer.Character
+        if char then
+            local eq = char:FindFirstChild("Knife")
+            if eq then return eq, true end
+        end
+        local bp = LocalPlayer:FindFirstChildOfClass("Backpack")
+        local st = bp and bp:FindFirstChild("Knife") or nil
+        if st then return st, false end
+        return nil
+    end
+
+    -- ensure_knife_equipped шитаро 3884: не в руках — экипируем, стреляем в след. тик
+    local function ensureKnifeEquipped()
+        local knife, equipped = getKnife()
+        if not knife then return nil end
+        if not equipped then
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then pcall(function() hum:EquipTool(knife) end) end
+            return nil
+        end
+        return knife
+    end
+
+    -- knife_stab шитаро 3897
+    local function knifeStab(knife)
+        local events = knife:FindFirstChild("Events")
+        local stabbed = events and events:FindFirstChild("KnifeStabbed")
+        if stabbed then pcall(function() stabbed:FireServer() end) end
+    end
+
+    -- knife_touch шитаро 3905
+    local function knifeTouch(knife, part)
+        local events = knife:FindFirstChild("Events")
+        local touched = events and events:FindFirstChild("HandleTouched")
+        if touched then pcall(function() touched:FireServer(part) end) end
+    end
+
+    -- опрос роли раз в 0.3с, пока аура/kill all включены (шитаро 3917)
+    task.spawn(function()
+        while task.wait(0.3) do
+            if auraState.Enabled or auraState.KillAll then
+                pcall(refreshMurderer)
+            end
+        end
+    end)
+
+    -- главный цикл ауры (шитаро 3925): собрать жертв, один Stab + Touch каждому
+    task.spawn(function()
+        while task.wait() do
+            if (auraState.Enabled or auraState.KillAll) and amMurderer then
+                local knife
+                if auraState.AutoKnife then
+                    knife = ensureKnifeEquipped()
+                else
+                    -- авто-нож выключен: сами его не достаём — режем только
+                    -- если нож уже взят в руки
+                    local held, inHands = getKnife()
+                    if inHands then knife = held end
+                end
+                if knife and os.clock() - lastKill >= 0.05 then
+                    local char = LocalPlayer.Character
+                    local myPart = char and char:FindFirstChild("HumanoidRootPart")
+                    if myPart then
+                        local count = 0
+                        for _, plr in ipairs(Players:GetPlayers()) do
+                            if plr ~= LocalPlayer then
+                                local tchar = plr.Character
+                                local hum = tchar and tchar:FindFirstChildOfClass("Humanoid")
+                                if hum and hum.Health > 0 then
+                                    local part = tchar:FindFirstChild("HumanoidRootPart")
+                                        or tchar:FindFirstChild("Head")
+                                    if part then
+                                        if auraState.KillAll
+                                            or (auraState.Enabled
+                                                and (part.Position - myPart.Position).Magnitude <= auraState.Distance) then
+                                            count = count + 1
+                                            victims[count] = part
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                        if count > 0 then
+                            knifeStab(knife)
+                            for i = 1, count do knifeTouch(knife, victims[i]) end
+                            lastKill = os.clock()
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
+    auraState.Refresh = refreshMurderer
+end
 
 -- ==========================================
 -- FORCESHOT — портировано из шитаро (resolve_force 3379 / force_clear 3367),
@@ -2491,8 +2769,8 @@ end)
 -- отлёт до ForceStandOff), прицел — конец коридора. gun.Shoot:FireServer
 -- получает start_cf/aim_cf из коридора — выстрел летит сквозь стены
 -- ==========================================
-local FORCE_MIN_SPAN = 5    -- минимальная длина коридора (min_span шитаро)
-local FORCE_MAX_SPAN = 90   -- максимальная длина (max_span шитаро)
+gunHook.FORCE_MIN_SPAN = 5    -- минимальная длина коридора (min_span шитаро)
+gunHook.FORCE_MAX_SPAN = 90   -- максимальная длина (max_span шитаро)
 
 local function forceRaycast(o, d)
     local params = RaycastParams.new()
@@ -2551,7 +2829,7 @@ local function resolveForce()
     end
     -- back/front коридора: чуть позади цели и далеко вперёд по движению
     local back = live - dir * 6
-    local front = live + dir * math.max(FORCE_MIN_SPAN, vel.Magnitude * leadTime() + 8)
+    local front = live + dir * math.max(gunHook.FORCE_MIN_SPAN, vel.Magnitude * leadTime() + 8)
     if not forceClearToTarget(back, front, targetChar) then
         back = live - dir * 2.5
     end
@@ -2560,7 +2838,7 @@ local function resolveForce()
     -- los_clear(probe, mark) + los_clear(probe, live)) — иначе коридор
     -- открыт сейчас, а пуля летит в упреждённую точку сквозь стену
     local anchor = live
-    if aimTR.ready then
+    if aimRegs.aimTR.ready then
         local span = leadTime()
         if span > 0.001 then
             local okA, shifted = pcall(predictFrom, live, span, os.clock(), targetChar)
@@ -2571,7 +2849,7 @@ local function resolveForce()
     local want = aimState.ForceStandOff or 15
     while want > 0 do
         local probe = live - dir * want
-        if (front - probe).Magnitude <= FORCE_MAX_SPAN
+        if (front - probe).Magnitude <= gunHook.FORCE_MAX_SPAN
             and forceLosClear(probe, live) and forceLosClear(probe, anchor) then
             origin = probe
             break
@@ -2583,7 +2861,7 @@ end
 
 -- кэш коридора: RenderStepped считает, хук FireServer только читает
 RunService.RenderStepped:Connect(function()
-    forceOriginCF, forceAimCF = nil, nil
+    gunHook.forceOriginCF, gunHook.forceAimCF = nil, nil
     if not clientAlive() then return end
     -- форс шот теперь САМОСТОЯТЕЛЬНЫЙ: коридор строится и без включённого
     -- Sheriff-аима — иначе тогл Force Shot в SHERIFF ничего не делал
@@ -2591,7 +2869,7 @@ RunService.RenderStepped:Connect(function()
     if not localHasGun() then return end
     local okF, o, a = pcall(resolveForce)
     if okF and o and a then
-        forceOriginCF, forceAimCF = o, a
+        gunHook.forceOriginCF, gunHook.forceAimCF = o, a
     end
 end)
 
@@ -2609,14 +2887,14 @@ end)
 --    WeaponService.GunFired (gap_push 2295), выстрел — прямой
 --    Shoot:FireServer(start, aim)
 -- ==========================================
-local forceAtt, forceSaved = nil, nil
-local forceStamp = 0
+gunHook.forceAtt, gunHook.forceSaved = nil, nil
+gunHook.forceStamp = 0
 
 local function restoreOrigin()
-    local att = forceAtt
+    local att = gunHook.forceAtt
     if not att then return end
-    local saved = forceSaved
-    forceAtt, forceSaved = nil, nil
+    local saved = gunHook.forceSaved
+    gunHook.forceAtt, gunHook.forceSaved = nil, nil
     if saved then
         pcall(function()
             if att.Parent then att.CFrame = saved end
@@ -2634,13 +2912,13 @@ end
 local function pushOrigin(cf)
     local att = gunAttachment()
     if not att then return false end
-    if forceAtt and forceAtt ~= att then restoreOrigin() end
-    if not forceAtt then
+    if gunHook.forceAtt and gunHook.forceAtt ~= att then restoreOrigin() end
+    if not gunHook.forceAtt then
         local okS, saved = pcall(function() return att.CFrame end)
         if not okS or typeof(saved) ~= "CFrame" then return false end
-        forceAtt, forceSaved = att, saved
+        gunHook.forceAtt, gunHook.forceSaved = att, saved
     end
-    forceStamp = os.clock()
+    gunHook.forceStamp = os.clock()
     local okW = pcall(function() att.WorldCFrame = cf end)
     if not okW then
         restoreOrigin()
@@ -2652,7 +2930,7 @@ end
 
 -- страховка: аттач не должен остаться сдвинутым (шитаро tick 3656)
 RunService.Heartbeat:Connect(function()
-    if forceAtt and os.clock() - forceStamp > 0.05 then
+    if gunHook.forceAtt and os.clock() - gunHook.forceStamp > 0.05 then
         restoreOrigin()
     end
 end)
@@ -2681,13 +2959,13 @@ local function fireGun(gun, startCF, aimCF)
         remote = ev and ev:FindFirstChild("Shoot") or nil
     end
     if not remote or not remote:IsA("RemoteEvent") then return false end
-    autoFire.bypass = true
+    gunHook.autoFire.bypass = true
     local okF = pcall(function() remote:FireServer(startCF, aimCF) end)
-    autoFire.bypass = false
+    gunHook.autoFire.bypass = false
     if okF then
         local nowc = os.clock()
-        autoFire.lastShot = nowc
-        desyncSafeUntil = nowc + 0.15
+        gunHook.autoFire.lastShot = nowc
+        gunHook.desyncSafeUntil = nowc + 0.15
         aimShotMark.aim = aimCF.Position
         aimShotMark.at = nowc
     end
@@ -2716,14 +2994,14 @@ local function autoStep()
         return
     end
     local nowc = os.clock()
-    local hold = math.max(aimState.AutoDelay or 0, autoFire.gapSeen and autoFire.gap or 0)
-    if autoFire.lastShot > 0 and nowc - autoFire.lastShot < hold then return end
-    if aimState.ForceShot and forceOriginCF and forceAimCF then
+    local hold = math.max(aimState.AutoDelay or 0, gunHook.autoFire.gapSeen and gunHook.autoFire.gap or 0)
+    if gunHook.autoFire.lastShot > 0 and nowc - gunHook.autoFire.lastShot < hold then return end
+    if aimState.ForceShot and gunHook.forceOriginCF and gunHook.forceAimCF then
         -- форс: коридор считается в RenderStepped выше, аттач встаёт в
         -- его начало, выстрел прямой (KITI ForceShootAttempt 9467)
         disableCantShoot(gun)
-        pushOrigin(forceOriginCF)
-        fireGun(gun, forceOriginCF, forceAimCF)
+        pushOrigin(gunHook.forceOriginCF)
+        fireGun(gun, gunHook.forceOriginCF, gunHook.forceAimCF)
         return
     end
     -- обычный автозалп: только с чистой линией огня (KITI fn30 8593:
@@ -2733,7 +3011,7 @@ local function autoStep()
         or (char:FindFirstChild("RightHand") and char.RightHand.Position)
         or (char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart.Position)
     if not origin then return end
-    local aimPt = silentPoint or pickPoint(origin, head)
+    local aimPt = gunHook.silentPoint or pickPoint(origin, head)
     if not aimPt or not aimLosClear(origin, aimPt, tchar) then return end
     fireGun(gun, CFrame.new(origin), CFrame.new(aimPt))
 end
@@ -2746,14 +3024,14 @@ local function onGunFired(tool)
     local okD, mine = pcall(function() return tool:IsDescendantOf(char) end)
     if not (okD and mine) then return end
     local nowc = os.clock()
-    if autoFire.lastShot > 0 then
-        local g = nowc - autoFire.lastShot
-        if g > 0.02 and (not autoFire.gapSeen or g < autoFire.gap) then
-            autoFire.gap = g
-            autoFire.gapSeen = true
+    if gunHook.autoFire.lastShot > 0 then
+        local g = nowc - gunHook.autoFire.lastShot
+        if g > 0.02 and (not gunHook.autoFire.gapSeen or g < gunHook.autoFire.gap) then
+            gunHook.autoFire.gap = g
+            gunHook.autoFire.gapSeen = true
         end
     end
-    autoFire.lastShot = nowc
+    gunHook.autoFire.lastShot = nowc
 end
 
 task.spawn(function()
@@ -2779,29 +3057,61 @@ task.spawn(function()
 end)
 
 -- автозалп тикает 20 раз в сек (KITI 9574: task.wait(0.05))
-local autoAcc = 0
-local autoWarned = false
+gunHook.autoAcc = 0
+gunHook.autoWarned = false
 RunService.Heartbeat:Connect(function(dt)
     if not aimState.AutoShoot then return end
-    autoAcc = autoAcc + dt
-    if autoAcc < 0.05 then return end
-    autoAcc = 0
+    gunHook.autoAcc = gunHook.autoAcc + dt
+    if gunHook.autoAcc < 0.05 then return end
+    gunHook.autoAcc = 0
     local okA, errA = pcall(autoStep)
-    if not okA and not autoWarned then
-        autoWarned = true
+    if not okA and not gunHook.autoWarned then
+        gunHook.autoWarned = true
         warn("[PERMABAN] Auto shoot: ошибка шага — " .. tostring(errA))
     end
 end)
 
--- WEAPON SERVICE (дамп шитаро 3487–3533): направление выстрела пистолетом
--- И броска ножа игра берёт из require(ClientServices.WeaponService) —
--- GetMouseTargetCFrame / GetTargetPosition. Подменяем их на кеш-точку цели:
--- пистолет и нож летят точно в голову без движения камеры (и сквозь стены —
--- как шитаровский silent). Внутри хука ТОЛЬКО чтение кеш-точек, никаких
--- Roblox API — иначе рекурсия namecall'ов убьёт ввод, как раньше
-local wsHookInstalled = false
+-- WEAPON SERVICE — САЙЛЕНТ ТОЧНО КАК В ШИТАРО (shit.lua 3481–3533).
+-- НИКАКИХ namecall-хуков. Подменяем ТОЛЬКО GetMouseTargetCFrame и
+-- GetTargetPosition модуля ClientServices.WeaponService: когда аим
+-- включён и цель есть — метод возвращает ЧИСТЫЙ CFrame.new(точка_аима)
+-- (resolve_shot шитаро 3460: force -> aim коридора, иначе pick_point),
+-- когда цели нет — вызывается ОРИГИНАЛ. Игра идёт по нативному пути:
+-- сама берёт прицел из этих методов и сама шлёт Shoot:FireServer —
+-- поэтому у шитаро обычный клик всегда стреляет, а камера живёт своей
+-- жизнью (никакой синтетики с дистанцией камеры — та ошибка и давала
+-- заморозку). Шитаро переустанавливает хук раз в 1с (tick 3655-3669) —
+-- игра может пересобрать модуль, делаем так же
+gunHook.wsHookInstalled = false
+gunHook.hookMouse = nil
+gunHook.origMouse = nil
+gunHook.hookScreen = nil
+gunHook.origScreen = nil
+
+-- resolve_shot шитаро 3460: что вернуть вместо точки курсора
+local function resolveShotCF()
+    if not (aimState.Enabled or aimState.ForceShot) then return nil end
+    if not clientAlive() or not localHasGun() then return nil end
+    -- force-ветка resolve_shot 3462-3468: коридор уже построен в
+    -- RenderStepped (resolve_force 3379). push_origin (3341) ставит аттач
+    -- GunRaycastAttachment в начало коридора — игра берёт из него СТАРТ
+    -- выстрела, прицел возвращает наш CFrame — клик сам стреляет сквозь
+    -- стены, точно как у шитаро
+    if aimState.ForceShot and gunHook.forceOriginCF and gunHook.forceAimCF then
+        if pushOrigin(gunHook.forceOriginCF) then
+            return gunHook.forceAimCF
+        end
+    end
+    -- обычный сайлент: кэш точки из RenderStepped (predictPoint +
+    -- pick_point 3304 — LOS-подбор части тела). Нет кэша — цели нет,
+    -- отдаём оригинал
+    if gunHook.silentPoint then
+        return CFrame.new(gunHook.silentPoint)
+    end
+    return nil
+end
+
 local function installWeaponHook()
-    if wsHookInstalled then return end
     local rs = game:GetService("ReplicatedStorage")
     local cs = rs:FindFirstChild("ClientServices")
     if not cs then return end
@@ -2809,218 +3119,58 @@ local function installWeaponHook()
     if not wsm then return end
     local ok, m = pcall(require, wsm)
     if not ok or type(m) ~= "table" then return end
-    -- ФИКС ЗУМА: раньше отдавали CFrame прямо в точку цели — MM2 тянет
-    -- камеру (gun-zoom) к точке прицела, и на дальней цели камера
-    -- "приближалась" при сайленте. Теперь направление — в цель, а ДИСТАНЦИЯ
-    -- точки — как у оригинального mouse-hit: камера стоит как в ваниле,
-    -- выстрел/бросок летят по направлению (FireServer-хук доводит точку)
-    local function wsResolve(origCF)
-        -- гейт как у namecall-хука: Auto Shoot сам только СТРЕЛЯЕТ,
-        -- ручные выстрелы перенаправляет лишь Sheriff-аим или форс
-        if not (aimState.Enabled or aimState.ForceShot) then return nil end
-        local pt, o
-        if silentPoint then
-            pt, o = silentPoint, silentOrigin or silentPoint
-        else
-            return nil
+    pcall(function() if setreadonly then setreadonly(m, false) end end)
+    -- install_hooks шитаро 3496-3533: патчим только если метод ещё не наш
+    if type(m.GetMouseTargetCFrame) == "function" and m.GetMouseTargetCFrame ~= gunHook.hookMouse then
+        gunHook.origMouse = m.GetMouseTargetCFrame
+        gunHook.hookMouse = function(self, ...)
+            -- hook_mouse шитаро 3507-3514: resolve_shot -> точка аима,
+            -- иначе оригинал. pcall вокруг resolve — оригинал не страдает
+            local okR, cf = pcall(resolveShotCF)
+            if okR and cf then return cf end
+            return gunHook.origMouse(self, ...)
         end
-        if (pt - o).Magnitude < 0.01 then return nil end
-        local dir = (pt - o).Unit
-        if typeof(origCF) == "CFrame" then
-            local cam = workspace.CurrentCamera
-            local d = cam and (origCF.Position - cam.CFrame.Position).Magnitude or 0
-            if d > 1 then
-                local pos = o + dir * d
-                return CFrame.lookAt(pos, pos + dir)
-            end
-        end
-        return CFrame.lookAt(o, pt)
+        pcall(function() m.GetMouseTargetCFrame = gunHook.hookMouse end)
     end
-    pcall(function()
-        if setreadonly then setreadonly(m, false) end
-        local orig_mouse = m.GetMouseTargetCFrame
-        if type(orig_mouse) == "function" then
-            m.GetMouseTargetCFrame = function(self, ...)
-                local okO, ocf = pcall(orig_mouse, self, ...)
-                if not okO then
-                    -- оригинал упал: отдаём честную точку на цели (старое поведение)
-                    local got, cf = pcall(wsResolve, nil)
-                    if got and cf then return cf end
-                    error(ocf)
-                end
-                local got, cf = pcall(wsResolve, ocf)
-                if got and cf then return cf end
-                return ocf
-            end
+    if type(m.GetTargetPosition) == "function" and m.GetTargetPosition ~= gunHook.hookScreen then
+        gunHook.origScreen = m.GetTargetPosition
+        gunHook.hookScreen = function(self, x, y, ...)
+            -- hook_screen шитаро 3515-3522: тот же resolve, возврат CF
+            local okR, cf = pcall(resolveShotCF)
+            if okR and cf then return cf end
+            return gunHook.origScreen(self, x, y, ...)
         end
-        local orig_screen = m.GetTargetPosition
-        if type(orig_screen) == "function" then
-            m.GetTargetPosition = function(self, ...)
-                local okO, oval = pcall(orig_screen, self, ...)
-                if not okO then
-                    local got, cf = pcall(wsResolve, nil)
-                    if got and cf then return cf.Position end
-                    error(oval)
-                end
-                local got, cf = pcall(wsResolve, typeof(oval) == "Vector3" and CFrame.new(oval) or nil)
-                if got and cf then return cf.Position end
-                return oval
-            end
-        end
-    end)
-    wsHookInstalled = true
-    print("[PERMABAN] WeaponService hook: OK")
+        pcall(function() m.GetTargetPosition = gunHook.hookScreen end)
+    end
+    gunHook.wsHookInstalled = (gunHook.hookMouse ~= nil) or (gunHook.hookScreen ~= nil)
 end
+
+-- первая установка (до 30 попыток раз в 1с)
 task.spawn(function()
     for _ = 1, 30 do
-        installWeaponHook()
-        if wsHookInstalled then break end
+        pcall(installWeaponHook)
+        if gunHook.wsHookInstalled then break end
         task.wait(1)
+    end
+end)
+-- переустановка раз в 1с — как tick/next_hook шитаро 3655-3669
+task.spawn(function()
+    while task.wait(1) do
+        pcall(installWeaponHook)
     end
 end)
 
 -- redirectArgs удалён: был нужен только броску ножа, нож-аима больше нет
 
-local hookOk, hookErr = pcall(function()
-    local oldNamecall
-    -- безопасный вызов оригинала: inHook сбрасывается ВСЕГДА, даже если
-    -- игра сама кинет ошибку. Раньше при ошибке внутри перенаправленного
-    -- вызова inHook залипал в true — хук навсегда уходил в bypass и
-    -- сайлент "умирал" до перезахода (симптомы: не стреляет / не кидает)
-    local function callOrig(...)
-        inHook = true
-        local packed = table.pack(pcall(oldNamecall, ...))
-        inHook = false
-        if not packed[1] then error(packed[2]) end
-        return unpack(packed, 2, packed.n)
-    end
-    oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-        -- защита от повторного входа — на всякий случай; bypass наших
-        -- автозалпов: свой прямой FireServer хук не переписывает
-        if inHook or rayBypass or autoFire.bypass then return oldNamecall(self, ...) end
-        -- аим ИЛИ форс шот: каждый со своим флагом — форс шот самостоятельный
-        if aimState.Enabled or aimState.ForceShot then
-            local method = getnamecallmethod()
-            if method == "Raycast" and aimState.Enabled and aimState.Mode == "Silent" and silentPoint and self == workspace then
-                local args = { ... }
-                local origin, dir = args[1], args[2]
-                if typeof(origin) == "Vector3" and typeof(dir) == "Vector3" and dir.Magnitude > 0 then
-                    args[2] = (silentPoint - origin).Unit * dir.Magnitude
-                    return callOrig(self, unpack(args))
-                end
-            elseif (method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList"
-                or method == "FindPartOnRayWithWhitelist")
-                and aimState.Enabled and aimState.Mode == "Silent" and silentPoint and self == workspace then
-                local args = { ... }
-                local ray = args[1]
-                if ray and ray.Direction.Magnitude > 0 then
-                    args[1] = Ray.new(ray.Origin, (silentPoint - ray.Origin).Unit * ray.Direction.Magnitude)
-                    return callOrig(self, unpack(args))
-                end
-            elseif method == "FireServer" then
-                -- self.Name — чтение свойства, не namecall, рекурсии не будет
-                local n = self and self.Name
-                if type(n) == "string" then
-                    local nl = n:lower()
-                    -- пистолет (дамп шитаро 3576–3580): gun.Shoot:FireServer(start_cf, aim_cf).
-                    -- Подменяем ТОЛЬКО aim — последний CFrame/Vector3 в списке;
-                    -- start не трогаем: раньше redirectArgs перезаписывал ОБА аргумента,
-                    -- сервер видел старт из головы цели и молча отбрасывал выстрел —
-                    -- потому сайлент на пистолете и не работал
-                    if (aimState.Enabled or aimState.ForceShot) and (silentPoint or forceOriginCF)
-                        and (nl == "shoot" or nl:find("shoot", 1, true)) then
-                        -- любой перехваченный выстрел откладывает десынк на 0.15с:
-                        -- подмена скорости не должна совпасть с репликацией выстрела
-                        desyncSafeUntil = os.clock() + 0.15
-                        local args = { ... }
-                        local changed = false
-                        local finalAim = nil   -- фактическая точка полёта — для трейсера
-                        if aimState.ForceShot and forceOriginCF and forceAimCF then
-                            -- PUSH ORIGIN (шитаро 3341 / KITI 9488): аттач
-                            -- GunRaycastAttachment на миг встаёт в начало
-                            -- коридора — сервер видит старт выстрела И в
-                            -- аргументах Shoot, И на аттаче. Возврат — в
-                            -- тот же кадр (task.defer внутри pushOrigin)
-                            pcall(pushOrigin, forceOriginCF)
-                            -- FORCESHOT: gun.Shoot:FireServer(start_cf, aim_cf) —
-                            -- старт это ПЕРВЫЙ CFrame (коридор), прицел — последний.
-                            -- ВМЕСТЕ с аимом: прицел — упреждённая голова, но ТОЛЬКО
-                            -- если она лежит на линии коридора (скалярное произведение
-                            -- вручную: никаких namecall-вызовов внутри хука), иначе —
-                            -- конец коридора как в чистом шитаро: серверный рейкаст
-                            -- должен воткнуться в цель, а не в стену рядом с ней
-                            local aimCF = forceAimCF
-                            if silentPoint then
-                                local from = forceOriginCF.Position
-                                local dCor = forceAimCF.Position - from
-                                local dAim = silentPoint - from
-                                local mc, ma = dCor.Magnitude, dAim.Magnitude
-                                if mc > 0.05 and ma > 0.05
-                                    and (dCor.X * dAim.X + dCor.Y * dAim.Y + dCor.Z * dAim.Z) / (mc * ma) > 0.98 then
-                                    aimCF = CFrame.new(silentPoint)
-                                end
-                            end
-                            for i = 1, #args do
-                                if typeof(args[i]) == "CFrame" then
-                                    args[i] = forceOriginCF
-                                    changed = true
-                                    break
-                                end
-                            end
-                            for i = #args, 1, -1 do
-                                local t = typeof(args[i])
-                                if t == "CFrame" then
-                                    args[i] = aimCF
-                                    changed = true
-                                    finalAim = aimCF.Position
-                                    break
-                                elseif t == "Vector3" then
-                                    args[i] = aimCF.Position
-                                    changed = true
-                                    finalAim = aimCF.Position
-                                    break
-                                end
-                            end
-                        elseif silentPoint then
-                            for i = #args, 1, -1 do
-                                local t = typeof(args[i])
-                                if t == "CFrame" then
-                                    args[i] = CFrame.new(silentPoint)
-                                    changed = true
-                                    finalAim = silentPoint
-                                    break
-                                elseif t == "Vector3" then
-                                    args[i] = silentPoint
-                                    changed = true
-                                    finalAim = silentPoint
-                                    break
-                                end
-                            end
-                        end
-                        if changed then
-                            if finalAim then
-                                -- метка для трейсера: показываем реальную траекторию
-                                aimShotMark.aim = finalAim
-                                aimShotMark.at = os.clock()
-                            end
-                            if not silentRemoteLogged then
-                                silentRemoteLogged = true
-                                print("[PERMABAN] Silent Aim: redirect remote '" .. n .. "'")
-                            end
-                            return callOrig(self, unpack(args))
-                        end
-                    end
-                    -- нож: НИКАКИХ хуков — бросок летит натурально и ловит
-                    -- расширенные хитбоксы (экспандер выше)
-                end
-            end
-        end
-        return oldNamecall(self, ...)
-    end))
-end)
-if not hookOk then
-    warn("[PERMABAN] Silent Aim: hookmetamethod/newcclosure недоступны на этом экзекуторе: " .. tostring(hookErr))
-end
+-- namecall-хук (__namecall: Raycast/FindPartOnRay/FireServer) УДАЛЁН
+-- (v2.44): у шитаро его НЕТ вообще. Сайлент целиком живёт в подмене
+-- методов WeaponService выше:
+--  • редирект FireServer "Shoot" дублировал WS-хук и добавлял лишний
+--    перехват ВСЕХ FireServer игры (KnifeStabbed, TrapSystem, данные);
+--  • редирект Raycast совпадал углом с лучом камеры при аиме (камера
+--    смотрит на цель) и ломал её коллизию — вторая причина заморозки.
+-- Теперь: нож бросается натурально (и ловится экспандером хитбоксов),
+-- клик идёт по нативному пути игры, автозал шлёт FireServer напрямую.
 
 -- Хоткей предикта (T) УДАЛЁН совсем. Авто-упреждение по пингу
 -- переключается тумблером "Auto predict" в окне SHERIFF
@@ -3091,14 +3241,17 @@ end)
 --    (логика «возвращения куда дошёл» из v2.26–v2.29), клон уничтожается,
 --    камера возвращается на гуманоида.
 -- Отличия от канонического iY: прозрачность клона из слайдера Self alpha
--- (в iY жёстко 0.5), парковка под полом вместо запредельного телепорта,
+-- (в iY жёстко 0.5), парковка тела на 12 стадов под найденным полом
+-- (с запасом над FallenPartsDestroyHeight) и держится ПИНОМ на Heartbeat —
+-- якорь не реплицируется, поза паркинга до сервера бы не доехала,
 -- единая процедура возврата для ручного и любого авто-выключения.
 -- ==========================================
-local INVIS_PARK_DEPTH = 12   -- глубина парковки оригинала под найденным полом
+local INVIS_PARK_DEPTH = 12    -- глубина парковки оригинала под найденным полом
+local INVIS_PARK_MARGIN = 50   -- запас над FallenPartsDestroyHeight при парковке за картой
 
 local invisState = { Enabled = false, Busy = false, Invisible = false,
-    Original = nil, Clone = nil, DiedConn = nil, Gen = 0,
-    ParkY = nil, ParkX = nil, ParkZ = nil, LastTrans = 0 }
+    Original = nil, Clone = nil, DiedConn = nil, PinConn = nil, Gen = 0,
+    ParkY = nil, ParkFloorY = nil, ParkX = nil, ParkZ = nil, LastTrans = 0 }
 invisState.Ghost = invisState.Ghost or 0.65   -- прозрачность клона (видишь только ты)
 local invisUIOff = nil    -- хук: UI позже подставит сюда сброс визуала тоггла
 
@@ -3114,6 +3267,10 @@ local function invisCleanup()
     if invisState.DiedConn then
         pcall(function() invisState.DiedConn:Disconnect() end)
         invisState.DiedConn = nil
+    end
+    if invisState.PinConn then
+        pcall(function() invisState.PinConn:Disconnect() end)
+        invisState.PinConn = nil
     end
     if invisState.Clone and invisState.Clone.Parent then
         pcall(function() invisState.Clone:Destroy() end)
@@ -3165,6 +3322,11 @@ local function invisRestore(reason)
             pcall(function() invisState.DiedConn:Disconnect() end)
             invisState.DiedConn = nil
         end
+        -- пин глушим ДО возврата, иначе он перекричит телепорт обратно
+        if invisState.PinConn then
+            pcall(function() invisState.PinConn:Disconnect() end)
+            invisState.PinConn = nil
+        end
         -- если тело кто-то снял с парента (не уничтожая) — вернём в workspace
         if original and not original.Parent then
             local okP = pcall(function() original.Parent = workspace end)
@@ -3181,12 +3343,15 @@ local function invisRestore(reason)
         if original and original.Parent then
             local ohrp = original:FindFirstChild("HumanoidRootPart")
             if ohrp then
+                -- отвязка ДО телепорта: если что-то успело заанкорить
+                -- тело (трап), CFrame на якоре до сервера не доедет
+                ohrp.Anchored = false
                 if destCF then
                     ohrp.CFrame = destCF
                 else
                     -- клона нет (потерян/ошибка включения) — поднимаем тело
                     -- на поверхность из парковки, а не роняем под картой
-                    local baseY = invisState.ParkY
+                    local baseY = invisState.ParkFloorY or invisState.ParkY
                     if baseY then
                         ohrp.CFrame = CFrame.new(ohrp.Position.X,
                             baseY + INVIS_PARK_DEPTH, ohrp.Position.Z)
@@ -3194,7 +3359,6 @@ local function invisRestore(reason)
                 end
                 ohrp.AssemblyLinearVelocity = Vector3.zero
                 ohrp.AssemblyAngularVelocity = Vector3.zero
-                ohrp.Anchored = false   -- отвязка строго после телепорта
             end
             LocalPlayer.Character = original
             local ohum = original:FindFirstChildOfClass("Humanoid")
@@ -3235,9 +3399,15 @@ local function invisGracefulExit(reason)
     pcall(invisRestore, reason)
 end
 
--- парковка тела: короткий телепорт вниз + анкор. Пол ищем рейкастом —
--- паркуемся ПОД ним, а не в воздухе (если включить инвиз в прыжке).
--- Такие телепорты анти-телепорт не флажит — проверено в v2.25–v2.29
+-- парковка тела: телепорт ПОД КАРТУ (на 12 стадов под найденным полом,
+-- как в iY) БЕЗ ЯКОРЯ. Анкор ставится только локально и серверу не
+-- реплицируется: заанкоренное тело клиент перестаёт симулировать — поза
+-- паркинга до сервера НЕ доходит, и для всех тело так и стоит в точке
+-- включения (главный баг инвиза). Вместо якоря тело держит пин на
+-- Heartbeat (включается в applyInvis): каждый кадр CFrame на точку
+-- парковки + нулевые скорости — клиент симулирует и рассылает позу,
+-- сервер видит тело за картой. Запас над FallenPartsDestroyHeight:
+-- ниже тело уничтожит и инвиз кончится
 local function parkOriginal(char, fromCF)
     local ohrp = char:FindFirstChild("HumanoidRootPart")
     if not ohrp then return end
@@ -3249,13 +3419,25 @@ local function parkOriginal(char, fromCF)
         local res = workspace:Raycast(fromCF.Position, Vector3.new(0, -200, 0), params)
         if res then parkY = res.Position.Y - INVIS_PARK_DEPTH end
     end)
+    -- уровень поверхности у точки включения: на него поднимает тело
+    -- аварийный возврат, если клон потерялся
+    invisState.ParkFloorY = parkY + INVIS_PARK_DEPTH
+    -- если найденный пол сам лежит близко к дну мира — паркуемся не под
+    -- ним, а чуть выше границы уничтожения
+    pcall(function()
+        local fdh = workspace.FallenPartsDestroyHeight
+        if type(fdh) == "number" then
+            parkY = math.max(parkY, fdh + INVIS_PARK_MARGIN)
+        end
+    end)
     invisState.ParkY = parkY
     invisState.ParkX = fromCF.X
     invisState.ParkZ = fromCF.Z
+    -- отвязка ДО телепорта: CFrame на якоре до сервера не доедет
+    if ohrp.Anchored then ohrp.Anchored = false end
     ohrp.CFrame = CFrame.new(fromCF.X, parkY, fromCF.Z)
     ohrp.AssemblyLinearVelocity = Vector3.zero
     ohrp.AssemblyAngularVelocity = Vector3.zero
-    ohrp.Anchored = true
 end
 
 local function applyInvis(state)
@@ -3303,8 +3485,8 @@ local function applyInvis(state)
             invisState.Original = char
             invisState.Clone = clone
             if cam then cam.CameraType = Enum.CameraType.Scriptable end
-            -- 1) оригинал паркуется под пол: короткий телепорт реплицируется
-            --    — для сервера и игроков мы исчезли с карты
+            -- 1) оригинал паркуется под пол: позу до сервера довозит
+            --    пин (ниже) — для сервера и игроков мы исчезли с карты
             parkOriginal(char, CF_1)
             task.wait()   -- кадр на переезд
             -- тоггл сорвали/респавн случился, пока ехали — тихий откат
@@ -3332,6 +3514,27 @@ local function applyInvis(state)
             end
             restartAnimate(clone)
             invisState.Invisible = true
+            -- ПИН ПАРКОВКИ: каждый кадр держим оригинал на точке парковки.
+            -- Только так поза паркинга реально доезжает до сервера: пока
+            -- клиент симулирует тело и рассылает позу, сервер видит его
+            -- под картой. Якорь вместо пина НЕ работает — он локальный,
+            -- сервер его не видит (главный баг «тело стоит где включил»)
+            invisState.PinConn = RunService.Heartbeat:Connect(function()
+                local original = invisState.Original
+                if not (invisState.Invisible and original and original.Parent) then return end
+                local phrp = original:FindFirstChild("HumanoidRootPart")
+                local py = invisState.ParkY
+                if not (phrp and py) then return end
+                -- тело утащили далеко от парковки (раунд-переезд)? не воюем:
+                -- гардиан заметит прыжок и перепаркует относительно новой точки
+                local px = invisState.ParkX or phrp.Position.X
+                local pz = invisState.ParkZ or phrp.Position.Z
+                if (phrp.Position - Vector3.new(px, py, pz)).Magnitude > 30 then return end
+                if phrp.Anchored then phrp.Anchored = false end
+                phrp.CFrame = CFrame.new(px, py, pz)
+                phrp.AssemblyLinearVelocity = Vector3.zero
+                phrp.AssemblyAngularVelocity = Vector3.zero
+            end)
             -- смерть клона → мягкий выход (в iY это Respawn())
             if chum then
                 invisState.DiedConn = chum.Died:Connect(function()
@@ -3436,15 +3639,19 @@ task.spawn(function()
                     if original and original.Parent then
                         local ohrp = original:FindFirstChild("HumanoidRootPart")
                         if ohrp then
-                            if not ohrp.Anchored then ohrp.Anchored = true end
+                            -- БЕЗ якоря: якорь ставится только локально,
+                            -- серверу не реплицируется и глушит рассылку позы
+                            -- (для всех тело «застывает» в точке включения).
+                            -- Тело держит пин на Heartbeat, гардиан ловит
+                            -- только большие прыжки — раунд-переезды
                             local parkY = invisState.ParkY
-                            if parkY and ohrp.Position.Y > parkY + 2 then
+                            if parkY then
                                 local p = ohrp.Position
                                 local dxz = math.abs(p.X - (invisState.ParkX or p.X))
                                     + math.abs(p.Z - (invisState.ParkZ or p.Z))
                                 local dy = p.Y - parkY
                                 local nowC = os.clock()
-                                if (dxz > 30 or dy > 18)
+                                if (dxz > 30 or math.abs(dy) > 18)
                                     and nowC - (invisState.LastTrans or 0) > 1.5 then
                                     -- РАУНД-ПЕРЕЕЗД: следуем за телом
                                     invisState.LastTrans = nowC
@@ -3462,6 +3669,13 @@ task.spawn(function()
                                             end
                                         end
                                         local npy = p.Y - INVIS_PARK_DEPTH - 2
+                                        invisState.ParkFloorY = p.Y
+                                        pcall(function()
+                                            local fdh = workspace.FallenPartsDestroyHeight
+                                            if type(fdh) == "number" then
+                                                npy = math.min(npy, fdh + INVIS_PARK_MARGIN)
+                                            end
+                                        end)
                                         invisState.ParkY = npy
                                         invisState.ParkX = p.X
                                         invisState.ParkZ = p.Z
@@ -3474,12 +3688,6 @@ task.spawn(function()
                                     if invisEnableControls then
                                         pcall(invisEnableControls)
                                     end
-                                elseif dxz <= 30 and dy <= 18 then
-                                    pcall(function()
-                                        ohrp.CFrame = CFrame.new(p.X, parkY, p.Z)
-                                        ohrp.AssemblyLinearVelocity = Vector3.zero
-                                        ohrp.AssemblyAngularVelocity = Vector3.zero
-                                    end)
                                 end
                             end
                         end
@@ -3591,19 +3799,37 @@ task.spawn(function()
             local hum = trapHuman()
             if hum and hum.Health > 0 then
                 trapCache(hum)
-                if hum.WalkSpeed <= 1 then
-                    trapState.Zero = trapState.Zero + 0.1
-                    if trapState.Zero >= 1 and os.clock() >= trapState.Window then
-                        trapState.Window = os.clock() + 5   -- TRAP_HOLD шитаро
+                -- гард пустоты: тело уже летит в пустоту (конец раунда) —
+                -- это ШТАТНЫЙ фриз игры, не воюем с ним, отыгрываем честно
+                local inVoidFall = false
+                pcall(function()
+                    local ch = LocalPlayer.Character
+                    local p = ch and ch:FindFirstChild("HumanoidRootPart")
+                    local fdh = workspace.FallenPartsDestroyHeight
+                    if p and type(fdh) == "number"
+                        and p.Position.Y <= fdh + 60 then
+                        inVoidFall = true
+                    end
+                end)
+                if not inVoidFall then
+                    if hum.WalkSpeed <= 1 then
+                        -- v0.01: МГНОВЕННО, без секунды ожидания — первый
+                        -- тик с нулевой скоростью открывает окно разблокировки
+                        trapState.Zero = trapState.Zero + 0.1
+                        if trapState.Zero >= 0.1 and os.clock() >= trapState.Window then
+                            trapState.Window = os.clock() + 5   -- TRAP_HOLD шитаро
+                        end
+                    else
+                        trapState.Zero = 0
+                    end
+                    if os.clock() < trapState.Window then
+                        trapUnlockHuman(hum)
+                        trapKillGui()
                     end
                 else
                     trapState.Zero = 0
                 end
-                if os.clock() < trapState.Window then
-                    trapUnlockHuman(hum)
-                    trapKillGui()
-                end
-                if not invisState.Busy then
+                if not invisState.Busy and not inVoidFall then
                     local ch = LocalPlayer.Character
                     if ch then
                         for _, pv in ipairs(ch:GetDescendants()) do
@@ -3678,7 +3904,7 @@ local function desyncStep()
     if not desyncState.Enabled then return end
     if not clientAlive() then return end
     local now = os.clock()
-    if now < desyncSafeUntil then return end
+    if now < gunHook.desyncSafeUntil then return end
     if now - desyncState.LastFire < desyncState.Interval then return end
 
     local char = LocalPlayer.Character
@@ -3717,15 +3943,14 @@ RunService.Heartbeat:Connect(desyncStep)
 
 
 -- ==========================================
--- 3H. FLING — раскрутка себя о цель (вкладка Fling)
--- Клиент НЕ может двинуть чужого персонажа напрямую (нет network ownership),
--- но МОЖЕТ раскрутить свой: жмём огромную угловую скорость на свой HRP и
--- прижимаемся к цели — при контакте сервер разруливает столкновение, и
--- улетает УЖЕ цель. Касания обязательны: в инвизе флинг недоступен
--- (тебя нет на карте). Позиция записывается ДО старта —
--- после флинга возвращаемся ровно в неё (v2.29)
+-- 3H. FLING — раскрутка цели (вкладка Fling)
+-- Порт do_fling из дампа шитаро (shit.lua 17874-17998): свой HRP
+-- телепортируется вокруг цели с Velocity 9e7 и RotVelocity 9e8 —
+-- сервер разруливает контакт, и улетает ЦЕЛЬ. BodyVelocity глушит
+-- свой полёт, FallenPartsDestroyHeight на время флинга отключён,
+-- после — возврат на записанную точку
 -- ==========================================
-local flingState = { Busy = false }
+local flingState = { Busy = false, Saved = nil }
 
 local function flingPlayer(pl)
     if flingState.Busy then return end
@@ -3737,50 +3962,76 @@ local function flingPlayer(pl)
     if invisState.Enabled then return end   -- в инвизе касаний нет — флинг бессмыслен
     if hrp.Anchored then return end
     local tchar = pl.Character
-    local thrp = tchar and tchar:FindFirstChild("HumanoidRootPart")
-    if not thrp then return end
+    local thrp = tchar and (tchar:FindFirstChild("HumanoidRootPart") or tchar:FindFirstChild("Head"))
+    local thum = tchar and tchar:FindFirstChildOfClass("Humanoid")
+    if not thrp or not thum or thum.Health <= 0 or thum.Sit then return end
     flingState.Busy = true
-    -- v2.29: ЗАПИСЬ ПОЗИЦИИ до флинга — после раскрутки возвращаем ровно в неё
-    local savedPos = hrp.Position
-    local savedRot = hrp.CFrame.Rotation
+    if hrp.Velocity.Magnitude < 50 then
+        flingState.Saved = hrp.CFrame
+    end
+    local camera = workspace.CurrentCamera
+    local old_fdh = workspace.FallenPartsDestroyHeight
+    if camera then camera.CameraSubject = thrp end
+    pcall(function() workspace.FallenPartsDestroyHeight = 0/0 end)
+    local bv = Instance.new("BodyVelocity")
+    bv.Parent = hrp
+    bv.Velocity = Vector3.new(0, 0, 0)
+    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    local se = hum:GetStateEnabled(Enum.HumanoidStateType.Seated)
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
     task.spawn(function()
-        local t0 = os.clock()
-        while os.clock() - t0 < 1.5 and clientAlive() do
+        local tm = tick()
+        local ang = 0
+        while tick() - tm < 2 do
             local tc = pl.Character
-            local th = tc and tc:FindFirstChild("HumanoidRootPart")
+            local th2 = tc and tc:FindFirstChildOfClass("Humanoid")
+            local t2 = tc and (tc:FindFirstChild("HumanoidRootPart") or tc:FindFirstChild("Head"))
             local mc = LocalPlayer.Character
             local mh = mc and mc:FindFirstChild("HumanoidRootPart")
-            if th and mh then
-                mh.CFrame = th.CFrame * CFrame.new(math.random() * 2 - 1, 0.5, math.random() * 2 - 1)
-                pcall(function()
-                    mh.AssemblyAngularVelocity = Vector3.new(1e6, 1e6, 1e6)
-                    mh.AssemblyLinearVelocity = Vector3.new(0, 20, 0)
-                end)
-            end
-            RunService.Heartbeat:Wait()
+            if not (t2 and th2 and th2.Health > 0 and mh and mh.Parent) then break end
+            ang = ang + 100
+            mh.CFrame = CFrame.new(t2.Position) * CFrame.new(0, 1.5, 0) + th2.MoveDirection * t2.Velocity.Magnitude / 1.25
+            mh.CFrame = mh.CFrame * CFrame.Angles(math.rad(ang), 0, 0)
+            mc:SetPrimaryPartCFrame(mh.CFrame)
+            mh.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+            mh.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+            task.wait()
+            mh.CFrame = CFrame.new(t2.Position) * CFrame.new(0, -1.5, 0) + th2.MoveDirection
+            mh.CFrame = mh.CFrame * CFrame.Angles(math.rad(ang), 0, 0)
+            mc:SetPrimaryPartCFrame(mh.CFrame)
+            mh.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+            mh.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+            task.wait()
         end
-        -- возврат в ЗАПИСАННУЮ позицию: пиним CFrame несколько кадров подряд
-        -- и глушим скорость каждый кадр — пока не уляжется висящая физика
         pcall(function()
-            if clientAlive() then
-                local mc = LocalPlayer.Character
-                local mh = mc and mc:FindFirstChild("HumanoidRootPart")
-                if mh then
-                    local target = CFrame.new(savedPos) * savedRot
-                    for _ = 1, 15 do
-                        if not mh.Parent then break end
-                        mh.AssemblyAngularVelocity = Vector3.zero
-                        mh.AssemblyLinearVelocity = Vector3.zero
-                        mh.CFrame = target
-                        RunService.Heartbeat:Wait()
+            if bv then bv:Destroy() end
+            if hum and se ~= nil then hum:SetStateEnabled(Enum.HumanoidStateType.Seated, se) end
+            local cam2 = workspace.CurrentCamera
+            local mhum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if cam2 and mhum then cam2.CameraSubject = mhum end
+        end)
+        -- возврат на записанную точку (как в шитаро: тпим кадр за кадром
+        -- и глушим скорость, пока не доедем до 25 стадов)
+        pcall(function()
+            local saved = flingState.Saved
+            local mh = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local mhum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if saved and mh and mh.Parent then
+                local tg = tick() + 3
+                repeat
+                    mh.CFrame = saved * CFrame.new(0, 0.5, 0)
+                    LocalPlayer.Character:SetPrimaryPartCFrame(saved * CFrame.new(0, 0.5, 0))
+                    if mhum then mhum:ChangeState("GettingUp") end
+                    for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            part.Velocity = Vector3.new()
+                            part.RotVelocity = Vector3.new()
+                        end
                     end
-                    if mh.Parent then
-                        mh.AssemblyAngularVelocity = Vector3.zero
-                        mh.AssemblyLinearVelocity = Vector3.zero
-                        mh.CFrame = target
-                    end
-                end
+                    task.wait()
+                until (mh.Position - saved.Position).Magnitude < 25 or tick() > tg or not mh.Parent
             end
+            pcall(function() workspace.FallenPartsDestroyHeight = old_fdh end)
         end)
         flingState.Busy = false
     end)
@@ -4298,26 +4549,48 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- 6. ЖЕЛЕ-АНИМАЦИЯ ОКОН
--- Окно вылетает и пружинит вокруг финального размера:
--- чуть больше → чуть меньше → чуть больше → встало.
+-- 6. iOS-АНИМАЦИЯ ОКОН
+-- Открытие: окно всплывает с 82% масштаба с лёгким пружинным
+-- перелётом (Back Out) — как модалка в iOS.
+-- Закрытие: схлопывается в 86% (Quad In), потом прячется.
 -- ==========================================
 local SettingsWindows = {}
 local uiConns = {}   -- UIS-коннекты текущего BuildUI, сносятся при пересборке
 
-local function PlayJelly(frame)
+local function PlayIOS(frame)
     if not frame then return end
-    local target = frame.Size
-    frame.Size = UDim2.new(0, 0, 0, 0)
-    TweenService:Create(frame, TweenInfo.new(0.9, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {
-        Size = target
+    local us = frame:FindFirstChild("IOSScale")
+    if not us then
+        us = Instance.new("UIScale")
+        us.Name = "IOSScale"
+        us.Parent = frame
+    end
+    us.Scale = 0.82
+    TweenService:Create(us, TweenInfo.new(0.42, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Scale = 1
     }):Play()
+end
+
+local function CloseIOS(frame, onDone)
+    if not frame then if onDone then onDone() end return end
+    local us = frame:FindFirstChild("IOSScale")
+    if not us then
+        us = Instance.new("UIScale")
+        us.Name = "IOSScale"
+        us.Scale = 1
+        us.Parent = frame
+    end
+    local tw = TweenService:Create(us, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Scale = 0.86
+    })
+    if onDone then tw.Completed:Connect(function() onDone() end) end
+    tw:Play()
 end
 
 -- ==========================================
 -- 7. UI КАРКАС (iOS STYLE)
 -- ==========================================
-local ScreenGui, MainFrame, SettingsGui, Tooltip, AvatarLabel = nil, nil, nil, nil, nil
+local ScreenGui, MainFrame, SettingsGui, Tooltip, AvatarLabel, MimiOverlay = nil, nil, nil, nil, nil, nil
 local BuildUI
 
 task.spawn(function()
@@ -4359,7 +4632,7 @@ BuildUI = function()
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, 500, 0, 500)
     MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)   -- желе растёт из центра
+    MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)   -- iOS-анимация растёт из центра
     MainFrame.BackgroundColor3 = Theme.Bg
     MainFrame.BackgroundTransparency = 0.04
     MainFrame.BorderSizePixel = 0
@@ -4506,8 +4779,8 @@ BuildUI = function()
     local LOGO_DECAL_ID = 116199860291067   -- ← id картинки-логотипа
     local LogoImage = Instance.new("ImageLabel")
     LogoImage.Name = "LogoImage"
-    LogoImage.Size = UDim2.new(1, -16, 0, 84)
-    LogoImage.Position = UDim2.new(0, 8, 0, 12)
+    LogoImage.Size = UDim2.new(1, -12, 0, 80)
+    LogoImage.Position = UDim2.new(0, 6, 0, 92)
     LogoImage.BackgroundTransparency = 1
     LogoImage.ScaleType = Enum.ScaleType.Fit
     LogoImage.ZIndex = 5
@@ -4664,7 +4937,7 @@ BuildUI = function()
         for _, c in ipairs(uiConns) do c:Disconnect() end
         uiConns = {}
         -- иначе RightAlt молча дёргает .Visible на уничтоженных фреймах
-        ScreenGui, MainFrame, SettingsGui, AvatarLabel = nil, nil, nil, nil
+        ScreenGui, MainFrame, SettingsGui, AvatarLabel, MimiOverlay = nil, nil, nil, nil, nil
     end)
 
     -- ==========================================
@@ -4672,23 +4945,37 @@ BuildUI = function()
     -- Всякие API аватаров ВЫРЕЗАНЫ: экзекутор падает с TypeError
     -- и убивает весь скрипт. Просто rbxassetid:// с твоим ID
     -- + тихая страховка через GetObjects.
+    -- v0.00: мими поменялась местами с лого (теперь сверху), выросла
+    -- до 128px и выпирает СВЕРХУ окна — верхняя часть торчит над
+    -- рамкой GUI, слегка заходя на неё
     -- ==========================================
     local AVATAR_DECAL_ID = 122430623125894   -- ← ID твоей декали, меняй тут
 
-    -- мими живёт в сайдбаре: под лого, над вкладками. Скругление прямо
-    -- на ImageLabel — UICorner маскирует саму картинку. 64px — с запасом
-    -- от краёв полосы, ничего не вылезает
+    -- оверлей в ScreenGui, а не внутри окна: MainFrame с ClipsDescendants
+    -- обрезал бы всё, что вылезает за его границы. Оверлей повторяет
+    -- позицию окна, синхронится при перетаскивании и анимируется тем же
+    -- iOS-скейлом, что и окно: тот же пивот (центр окна) — мими приклеена
+    -- к рамке на всём протяжении анимации
+    MimiOverlay = Instance.new("Frame")
+    MimiOverlay.Name = "MimiOverlay"
+    MimiOverlay.Size = UDim2.new(0, 0, 0, 0)
+    MimiOverlay.AnchorPoint = Vector2.new(0.5, 0.5)
+    MimiOverlay.Position = MainFrame.Position
+    MimiOverlay.BackgroundTransparency = 1
+    MimiOverlay.ZIndex = 60
+    MimiOverlay.Parent = ScreenGui
+
     AvatarLabel = Instance.new("ImageLabel")
     AvatarLabel.Name = "AvatarLabel"
-    AvatarLabel.Size = UDim2.new(0, 56, 0, 56)
-    AvatarLabel.AnchorPoint = Vector2.new(0.5, 0)
-    AvatarLabel.Position = UDim2.new(0.5, 0, 0, 112)
+    AvatarLabel.Size = UDim2.new(0, 128, 0, 128)
+    AvatarLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+    AvatarLabel.Position = UDim2.new(0, -194, 0, -240)
     AvatarLabel.BackgroundTransparency = 1
     AvatarLabel.ScaleType = Enum.ScaleType.Fit
     AvatarLabel.Visible = true
-    AvatarLabel.ZIndex = 5
-    AvatarLabel.Parent = Sidebar
-    Instance.new("UICorner", AvatarLabel).CornerRadius = UDim.new(0, 10)
+    AvatarLabel.ZIndex = 60
+    AvatarLabel.Parent = MimiOverlay
+    Instance.new("UICorner", AvatarLabel).CornerRadius = UDim.new(0, 14)
 
     -- прямая загрузка: ставим сразу, Roblox сам грузит асинхронно
     AvatarLabel.Image = "rbxassetid://" .. tostring(AVATAR_DECAL_ID)
@@ -4724,6 +5011,7 @@ BuildUI = function()
             local d = input.Position - DragStart
             MainFrame.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + d.X,
                                            StartPos.Y.Scale, StartPos.Y.Offset + d.Y)
+            if MimiOverlay then MimiOverlay.Position = MainFrame.Position end
         end
     end)
     UISConn(UserInputService.InputEnded, function(input)
@@ -4772,6 +5060,19 @@ BuildUI = function()
             btn.BackgroundColor3 = Theme.Bg
             btn.BackgroundTransparency = 0.2
             ContentTabs[name].Parent.Visible = true
+            -- визуальный секс при переключении вкладок: контент
+            -- вылетает пружиной, кнопка вспыхивает подсветкой
+            local host = ContentTabs[name].Parent
+            local pop = host:FindFirstChild("TabPop")
+            if not pop then
+                pop = Instance.new("UIScale")
+                pop.Name = "TabPop"
+                pop.Parent = host
+            end
+            pop.Scale = 0.93
+            TweenService:Create(pop, TweenInfo.new(0.26, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+            btn.BackgroundTransparency = 0.6
+            TweenService:Create(btn, TweenInfo.new(0.32, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 0.2 }):Play()
         end
     end
 
@@ -5014,7 +5315,7 @@ BuildUI = function()
         WinClose.AutoButtonColor = false
         WinClose.Parent = Win
         Instance.new("UICorner", WinClose).CornerRadius = UDim.new(1, 0)
-        WinClose.MouseButton1Click:Connect(function() Win.Visible = false end)
+        WinClose.MouseButton1Click:Connect(function() CloseIOS(Win, function() Win.Visible = false end) end)
 
         local dragging, dragStart, startPos = false, nil, nil
         WinTitle.InputBegan:Connect(function(input)
@@ -5828,8 +6129,40 @@ BuildUI = function()
         aimState.AutoDelay = v
     end)
 
-    -- ОКНО MURDERER удалено вместе с нож-аимом: за мардера остался только
-    -- хитбокс-экспандер (тумблер Hitbox на вкладке Target, размер — окно HITBOX)
+    -- ОКНО MURDERER (v2.42, напротив SHERIFF): хитбокс-экспандер переехал
+    -- сюда с вкладки Target (отдельное окно HITBOX удалено) + кил-аура
+    -- из дампа шитаро: тумблер, слайдер дистанции 5-60 (дефолт 30) и kill all
+    local MurdererWin = MakeWindow("MURDERER", 250, 620, 0)
+    local murLay = NewVLayout(MurdererWin, 38)
+
+    local hbRow = murLay.AddRow(30)
+    AddMiniToggle(hbRow.f, 0, "Hitbox", hitboxState.Enabled, function(s)
+        hitboxState.Enabled = s
+        if not s then hbClearPending() end
+    end)
+    local hbrRow = murLay.AddRow(40)
+    AddMiniSlider(hbrRow.f, 0, "HB radius", 6, 40, hitboxState.Size, false, function(v)
+        hitboxState.Size = math.floor(v + 0.5)
+    end)
+
+    local kaRow = murLay.AddRow(30)
+    AddMiniToggle(kaRow.f, 0, "Kill aura", auraState.Enabled, function(s)
+        auraState.Enabled = s
+        if s and auraState.Refresh then task.spawn(auraState.Refresh) end
+    end)
+    local kadRow = murLay.AddRow(40)
+    AddMiniSlider(kadRow.f, 0, "Aura dist", 5, 60, auraState.Distance, false, function(v)
+        auraState.Distance = math.floor(v + 0.5)
+    end)
+    local kallRow = murLay.AddRow(30)
+    AddMiniToggle(kallRow.f, 0, "Kill all", auraState.KillAll, function(s)
+        auraState.KillAll = s
+        if s and auraState.Refresh then task.spawn(auraState.Refresh) end
+    end)
+    local knRow = murLay.AddRow(30)
+    AddMiniToggle(knRow.f, 0, "Auto knife", auraState.AutoKnife, function(s)
+        auraState.AutoKnife = s
+    end)
     -- ==========================================
     -- 12. ВКЛАДКА PLAYER: 2 столбика
     -- ==========================================
@@ -5860,29 +6193,29 @@ BuildUI = function()
     -- ВКЛАДКА VISUAL: трассеры выстрелов
     -- ==========================================
     local tracerMore = AddToggle(ContentTabs["Visual"], 1, "Bullet Tracer", tracerState.Enabled,
-        "луч на твой выстрел; срабатывает только на реальный выстрел", function(state)
+        "луч на твой выстрел", function(state)
             tracerState.Enabled = state
         end)
 
     local chamsMore = AddToggle(ContentTabs["Visual"], 2, "Chams", chamsState.Enabled,
-        "подсветка игроков по роли сквозь стены: цвет и прозрачность настраиваются отдельно для каждой", function(state)
+        "подсветка игроков сквозь стены по роли", function(state)
             chamsState.Enabled = state
             if not state then clearChams() end
         end)
 
     local sheriffMore = AddToggle(ContentTabs["Target"], 1, "Sheriff", aimState.Enabled,
-        "аим за шерифа: включается только после проверки пистолета в руках, цели — только убийцы", function(state)
+        "аим за шерифа, цели — убийцы", function(state)
             aimState.Enabled = state
         end)
 
     -- тумблер "Murderer" удалён: нож-аима больше нет, хитбокс ниже
     local grabMore = AddToggle(ContentTabs["Target"], 1, "Auto Grab Gun", grabState.Enabled,
-        "автоматически подбирает дропнутый шерифом пистолет, без настроек", function(state)
+        "автоподбор дропнутого пистолета", function(state)
             grabState.Enabled = state
         end, false)
 
     local invisMore, invisSetVisual = AddToggle(ContentTabs["Target"], 2, "Invis", invisState.Enabled,
-        "инвиз методом Infinite Yield: для всех ты исчезаешь с карты (оригинал анкорится под полом в точке включения), сам ходишь обычным персонажем; Self alpha — прозрачность себя (окно INVIS); выключение возвращает туда, куда дошёл", function(state)
+        "невидимость для всех, сам ходишь как обычно", function(state)
             invisState.Enabled = state
             task.spawn(function()
                 pcall(applyInvis, state)
@@ -5890,14 +6223,19 @@ BuildUI = function()
         end, true)
     invisUIOff = invisSetVisual   -- смерть клона: тоггл гасится сам
 
-    local hitMore = AddToggle(ContentTabs["Target"], 2, "Hitbox", hitboxState.Enabled,
-        "хитбокс с дампа шитаро: ТОЛЬКО за мардера — брошенный нож сам доводится до цели: когда снаряд прошёл в радиусе от игрока, стреляем HandleTouched его парта. Радиус — окно HITBOX", function(state)
+    -- МАСТЕР-ТУМБЛЕР MURDERER (v2.42): включает/выключает хитбокс и
+    -- кил-ауру разом, стрелочка открывает окно MURDERER напротив SHERIFF
+    local murderMore = AddToggle(ContentTabs["Target"], 2, "Murderer",
+        hitboxState.Enabled or auraState.Enabled,
+        "хитбокс и кил-аура за мардера", function(state)
             hitboxState.Enabled = state
+            auraState.Enabled = state
             if not state then hbClearPending() end
-        end)
+            if state and auraState.Refresh then task.spawn(auraState.Refresh) end
+        end, true)
 
     local desyncMore = AddToggle(ContentTabs["Target"], 2, "Velocity Desync", desyncState.Enabled,
-        "подмена скорости: чужие аимы/предикты мажут, тебя самого НЕ скрывает", function(state)
+        "чужие аимы мажут по тебе", function(state)
             desyncState.Enabled = state
         end)
 
@@ -5913,7 +6251,7 @@ BuildUI = function()
     FlingHint.Size = UDim2.new(1, -10, 0, 34)
     FlingHint.Position = UDim2.new(0, 0, 0, flingY)
     FlingHint.BackgroundTransparency = 1
-    FlingHint.Text = "нажми на игрока — флинг. в инвизе флинг не работает (нет касаний)"
+    FlingHint.Text = "нажми на игрока — флинг"
     FlingHint.TextColor3 = Theme.TextDim
     FlingHint.Font = FontMed
     FlingHint.TextSize = 11
@@ -5995,7 +6333,7 @@ BuildUI = function()
         roleLbl.Parent = row
 
         row.MouseEnter:Connect(function()
-            ShowTooltip(row, "флинг: раскручивает тебя о цель, сервер разруливает импульс — улетает цель. работать должен БЕЗ инвиза (нужны касания)")
+            ShowTooltip(row, "флинг: улетает цель")
         end)
         row.MouseLeave:Connect(HideTooltip)
         row.MouseButton1Click:Connect(function()
@@ -6022,7 +6360,7 @@ BuildUI = function()
     FlingTPStroke.Color = Theme.Sep
     FlingTPStroke.Transparency = 0.5
     FlingTPBtn.MouseEnter:Connect(function()
-        ShowTooltip(FlingTPBtn, "инвиз методом Infinite Yield, тот же что тоггл Invis: пропадаешь для всех, сам ходишь как обычно; повторное нажатие — возврат туда, куда дошёл")
+        ShowTooltip(FlingTPBtn, "инвиз: пропадаешь для всех, повторное нажатие — вернуть как было")
     end)
     FlingTPBtn.MouseLeave:Connect(HideTooltip)
     FlingTPBtn.MouseButton1Click:Connect(function()
@@ -6189,15 +6527,8 @@ BuildUI = function()
 
     ContentTabs["Animation"].CanvasSize = UDim2.new(0, 0, 0, 80)
 
-    -- ==========================================
-    -- ОКНО HITBOX: радиус довода ножа 6–40 (дефолт 12 — как в шитаро)
-    -- ==========================================
-    local HitboxWin = MakeWindow("HITBOX", 110, 620, 200)
-    local hbLay = NewVLayout(HitboxWin, 38)
-    local hrow = hbLay.AddRow(40)
-    AddMiniSlider(hrow.f, 0, "Radius", 6, 40, hitboxState.Size, false, function(v)
-        hitboxState.Size = math.floor(v + 0.5)
-    end)
+    -- окно HITBOX удалено (v2.42): радиус хитбокса — слайдер "HB radius"
+    -- в окне MURDERER напротив SHERIFF
 
     -- ==========================================
     -- ОКНО DESYNC: режим подмены, вращение угловой скоростью, интервал
@@ -6332,78 +6663,96 @@ BuildUI = function()
     finishTab(ContentTabs["Animation"])
     finishTab(ContentTabs["Target"])
 
-    -- ---- кнопки настроек открывают окна с желе ----
+    -- ---- кнопки настроек открывают/закрывают окна (iOS) ----
     hatMore.MouseButton1Click:Connect(function()
-        HatWin.Visible = not HatWin.Visible
         if HatWin.Visible then
+            CloseIOS(HatWin, function() HatWin.Visible = false end)
+        else
+            HatWin.Visible = true
             SettingsGui.Enabled = true
-            PlayJelly(HatWin)
+            PlayIOS(HatWin)
         end
     end)
     jumpMore.MouseButton1Click:Connect(function()
-        JumpWin.Visible = not JumpWin.Visible
         if JumpWin.Visible then
+            CloseIOS(JumpWin, function() JumpWin.Visible = false end)
+        else
+            JumpWin.Visible = true
             SettingsGui.Enabled = true
-            PlayJelly(JumpWin)
+            PlayIOS(JumpWin)
         end
     end)
     fakeMore.MouseButton1Click:Connect(function()
-        FakeWin.Visible = not FakeWin.Visible
         if FakeWin.Visible then
+            CloseIOS(FakeWin, function() FakeWin.Visible = false end)
+        else
+            FakeWin.Visible = true
             SettingsGui.Enabled = true
-            PlayJelly(FakeWin)
+            PlayIOS(FakeWin)
         end
     end)
     tracerMore.MouseButton1Click:Connect(function()
-        TracerWin.Visible = not TracerWin.Visible
         if TracerWin.Visible then
+            CloseIOS(TracerWin, function() TracerWin.Visible = false end)
+        else
+            TracerWin.Visible = true
             SettingsGui.Enabled = true
-            PlayJelly(TracerWin)
+            PlayIOS(TracerWin)
         end
     end)
     invisMore.MouseButton1Click:Connect(function()
-        InvisWin.Visible = not InvisWin.Visible
         if InvisWin.Visible then
+            CloseIOS(InvisWin, function() InvisWin.Visible = false end)
+        else
+            InvisWin.Visible = true
             SettingsGui.Enabled = true
-            PlayJelly(InvisWin)
+            PlayIOS(InvisWin)
         end
     end)
     chamsMore.MouseButton1Click:Connect(function()
-        ChamsWin.Visible = not ChamsWin.Visible
         if ChamsWin.Visible then
+            CloseIOS(ChamsWin, function() ChamsWin.Visible = false end)
+        else
+            ChamsWin.Visible = true
             SettingsGui.Enabled = true
-            PlayJelly(ChamsWin)
+            PlayIOS(ChamsWin)
         end
     end)
     sheriffMore.MouseButton1Click:Connect(function()
-        SheriffWin.Visible = not SheriffWin.Visible
         if SheriffWin.Visible then
+            CloseIOS(SheriffWin, function() SheriffWin.Visible = false end)
+        else
+            SheriffWin.Visible = true
             SettingsGui.Enabled = true
-            PlayJelly(SheriffWin)
+            PlayIOS(SheriffWin)
         end
     end)
-    -- блок кнопки MURDERER удалён вместе с окном и нож-аимом
-    hitMore.MouseButton1Click:Connect(function()
-        HitboxWin.Visible = not HitboxWin.Visible
-        if HitboxWin.Visible then
+    murderMore.MouseButton1Click:Connect(function()
+        if MurdererWin.Visible then
+            CloseIOS(MurdererWin, function() MurdererWin.Visible = false end)
+        else
+            MurdererWin.Visible = true
             SettingsGui.Enabled = true
-            PlayJelly(HitboxWin)
+            PlayIOS(MurdererWin)
         end
     end)
     desyncMore.MouseButton1Click:Connect(function()
-        DesyncWin.Visible = not DesyncWin.Visible
         if DesyncWin.Visible then
+            CloseIOS(DesyncWin, function() DesyncWin.Visible = false end)
+        else
+            DesyncWin.Visible = true
             SettingsGui.Enabled = true
-            PlayJelly(DesyncWin)
+            PlayIOS(DesyncWin)
         end
     end)
 
     selectTab("Player")
 
-    -- первое появление меню — тоже желе
+    -- первое появление меню — iOS-всплытие (мими всплывает вместе с окном)
     MainFrame.Visible = true
     if AvatarLabel then AvatarLabel.Visible = true end
-    PlayJelly(MainFrame)
+    PlayIOS(MainFrame)
+    PlayIOS(MimiOverlay)
 end
 
 -- ==========================================
@@ -6413,18 +6762,24 @@ UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.RightAlt then
         if ScreenGui and MainFrame then
-            local newState = not MainFrame.Visible
-            MainFrame.Visible = newState
-            if AvatarLabel then AvatarLabel.Visible = newState end
-            if newState then
-                PlayJelly(MainFrame)
-                if SettingsGui then SettingsGui.Enabled = true end
+            if MainFrame.Visible then
+                CloseIOS(MainFrame, function()
+                    MainFrame.Visible = false
+                    if AvatarLabel then AvatarLabel.Visible = false end
+                    if Tooltip then Tooltip.Visible = false end
+                    for _, w in ipairs(SettingsWindows) do
+                        w.Visible = false
+                    end
+                    if SettingsGui then SettingsGui.Enabled = false end
+                end)
+                -- мими схлопывается тем же твином, что и окно
+                CloseIOS(MimiOverlay)
             else
-                if Tooltip then Tooltip.Visible = false end
-                for _, w in ipairs(SettingsWindows) do
-                    w.Visible = false
-                end
-                if SettingsGui then SettingsGui.Enabled = false end
+                MainFrame.Visible = true
+                if AvatarLabel then AvatarLabel.Visible = true end
+                PlayIOS(MainFrame)
+                PlayIOS(MimiOverlay)
+                if SettingsGui then SettingsGui.Enabled = true end
             end
         end
     end
@@ -6434,5 +6789,5 @@ print("[PermaBan] Loaded. Hotkey: RightAlt")
 -- маркер конца файла: если ты видишь ЭТУ строку в консоли — исполнился
 -- именно свежий билд целиком. если видишь только "v2.17-knifehb loaded", но не
 -- видишь эту — в экзекуторе крутится старая копия, ищи её в autoexec/
-local BUILD2 = "v2.40-knifefly"
+local BUILD2 = "v0.01-alpha"
 print("[PERMABAN] " .. BUILD2 .. ": конец файла достигнут, фон зашит в скрипт")
