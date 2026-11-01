@@ -174,9 +174,51 @@ local LocalPlayer = Players.LocalPlayer
 -- позиции — спуф/десынк цели больше не уводит предикт (vel_trust
 -- 2773); коридор форса проверяет LOS и до упреждённой точки
 -- (шитаро 3400)
-local BUILD = "v2.38-aimdump"
+-- v2.39-roundfix: ФИКС «после конца раунда, если не выключил инвиз —
+-- не могу двигаться». По дампу шитаро найден механизм: игра трапит игрока
+-- (Remotes TrapSystem/TrapHitLocal → WalkSpeed/JumpPower сбрасываются до
+-- <= 1, в PlayerGui появляется оверлей TrapGUI, тело могут заанкорить) —
+-- против этого шитаро держит trap_engage/trap_unlock (11601/11596). С
+-- нашим инвизом трап прилетает в КЛОНА (LocalPlayer.Character = клон), а
+-- респавна, который снял бы фриз, не будет — сервер считает нас живым
+-- телом под полом. Чиним без метатейбл-хуков (портабельно): ①
+-- TrapHitLocal.OnClientEvent открывает 5с окно разблокировки (TRAP_HOLD
+-- шитаро); ② поллинг 0.1с: скорость <= 1 дольше 1с = трап без ремоута —
+-- возвращаем из кеша последней нормальной WalkSpeed/JumpPower/JumpHeight
+-- (trap_unlock + trap_speed_cache); ③ TrapGUI удаляется (trap_kill_gui);
+-- ④ внешние якоря и PlatformStand на своём теле снимаются (аналог
+-- protect_part шитаро 10537, но поллингом вместо хука метатейбла) — свои
+-- парты мы якорим только у запаркованного оригинала и только при Busy;
+-- ⑤ РАУНД-ПЕРЕЕЗД: серверный телепорт оригинала (конец раунда → лобби)
+-- больше не «заталкивает тело под старую высоту»: клон едет в лобби
+-- ВМЕСТЕ С ТЕЛОМ, тело перепаркуется ОТНОСИТЕЛЬНО новой точки (старый
+-- ParkY от карты всплывал над полом лобби и портил invisRestore), а если
+-- игра отключила управление — включаем обратно (PlayerModule); ⑥
+-- invisRestore возвращает скорость/прыжок — и после выключения инвиза в
+-- лобби сразу ходишь; ⑦ клон при включении инвиза очищается от якорей
+-- (трап мог заанкорить тело ДО включения)
+-- v2.40-knifefly: ХИТБОКС-ЭКСПАНДЕР ПЕРЕПИСАН С ДАМПА ШИТАРО (shit.lua,
+-- блок KNIFE). Ресайз HRP (v2.27–v2.37) удалён совсем — нож больше НЕ
+-- обязан физически касаться жертвы, чужие персонажи не трогаем вовсе
+-- (ноль ресайзов = ноль лагов по построению). Как работает (шитаро:
+-- adopt_projectile 4483 / segment_gap 4519 / try_flyby 4531 /
+-- direct_kill 4425 / resolve_impact 4467): ① брошенный нож находится по
+-- CollectionService-тегу ThrowingKnife рядом с нами и «адоптируется»
+-- (сигнал GetInstanceAddedSignal + поллинг 0.15с); ② каждый кадр меряем
+-- расстояние от ОТРЕЗКА траектории снаряда (позиция кадр назад →
+-- текущая) до парта каждой живой цели (HRP → торс → голова); ③ отрезок
+-- прошёл в радиусе — стреляем событиями СВОЕГО ножа:
+-- KnifeStabbed:FireServer() + HandleTouched:FireServer(part) — сервер
+-- регистрирует попадание; события ножа кешируются ДО броска (после
+-- броска тулка может исчезнуть, а бить надо её ремоутами); ④ снаряд
+-- исчез — последняя известная точка тоже бьёт (resolve_impact); один
+-- нож = одно попадание. Слайдер в окне HITBOX теперь Radius 6–40
+-- (дефолт 12 — как radius шитаро), старый конфиг с Size 25–60
+-- поджимается. Тогл Hitbox на вкладке Target и гейт «только за
+-- мардера» на месте
+local BUILD = "v2.40-knifefly"
 print("[PERMABAN] build " .. BUILD .. " loaded")
-print("[PERMABAN] аим по дампам шитаро/KITI: Force Shot тогл ВИДЕН в SHERIFF + работает через GunRaycastAttachment; Auto shoot с самообучением кулдауна (GunFired); сайлент с LOS-подбором части тела и пропуском прозрачных парт; инвиз = метод Infinite Yield; чамсы ролей = ТОЛЬКО GetPlayerData; velocity desync")
+print("[PERMABAN] хитбокс с дампа шитаро: брошенный нож сам доводится до цели (ThrowingKnife + HandleTouched, радиус в окне HITBOX); инвиз переживает конец раунда (анти-трап TrapHitLocal, клон едет в лобби с телом); аим: Force Shot в SHERIFF, Auto shoot, сайлент с LOS-подбором части тела; чамсы ролей = ТОЛЬКО GetPlayerData; velocity desync")
 
 -- CoreGui недоступен из обычных LocalScript в Studio — достаём через pcall,
 -- иначе весь скрипт падает на этой строке ещё до меню
@@ -2142,76 +2184,129 @@ local function pickPoint(origin, head)
 end
 
 -- ==========================================
--- 3E. HITBOX EXPANDER (вкладка Target) — только за МАРДЕРА
--- v2.37: возврат к проверенному ресайзу HumanoidRootPart (работал в
--- v2.27–v2.29), но БЕЗ причин лагов старой версии:
---  • ресайз ТОЛЬКО когда размер отличается от целевого (идемпотентно):
---    риг не пересобирается каждый цикл — персонажи не дёргаются;
---  • CanQuery=false: рейкасты (окклюзия камеры, аим) гигантский HRP не
---    видят — камера не прыгает;
---  • CanCollide=false: с гуманоидом не воюем, коллизию держат конечности;
---  • Massless=true: увеличенный HRP не меняет инерцию сборки цели.
--- Почему НЕ сварной бокс v2.33–v2.36: касания летящего ножа считает
--- клиент бросающего (наш), а игра на нём проверяет, ВО ЧТО врезался
--- нож, по имени парта/по персонажу — «PermaBanHitbox» такие фильтры не
--- проходил, попадания молча терялись («не работает»). Настоящий
--- HumanoidRootPart проходит ЛЮБОЙ фильтр: по имени, по гуманоиду, по
--- предку-персонажу. К тому же сварная схема зависела от тегирования
--- ножа по ТОЧНОМУ имени тулки (WEAPON_ROLE_MAP): не совпало имя — и нож
--- навсегда оставался в Default-группе, у которой с боксом коллизии
--- выключены. Исходный размер HRP запоминается ровно один раз и
--- возвращается при выключении/смерти/выходе игрока; размеры с клиента
--- не реплицируются — сервер и другие игроки видят обычный HRP. За
--- шерифа экспандера НЕТ: сервер валидирует луч пистолета по настоящему
--- HRP цели, локальный размер ему не виден.
+-- 3E. HITBOX EXPANDER (вкладка Target) — только за МАРДЕРА, МЕТОД ШИТАРО
+-- (дамп shit.lua, блок KNIFE: adopt_projectile 4483 / segment_gap 4519 /
+-- try_flyby 4531 / direct_kill 4425 / watch_pending 4545 / resolve_impact
+-- 4467). Ресайз HRP (v2.27–v2.37) УДАЛЕН ПОЛНОСТЬЮ: ножу больше НЕ нужно
+-- физически касаться жертвы, чужие персонажи не трогаем вовсе — ноль
+-- ресайзов = ноль лагов по построению. Механика:
+--  • брошенный нож находим по CollectionService-тегу ThrowingKnife рядом
+--    с собой и «адоптируем» (pending шитаро);
+--  • каждый кадр меряем расстояние от ОТРЕЗКА траектории снаряда
+--    (позиция кадр назад → текущая, segment_gap шитаро) до парта каждой
+--    живой цели (HRP → торс → голова, target_part_of шитаро);
+--  • отрезок прошёл в радиусе Radius → стреляем событиями СВОЕГО ножа:
+--    KnifeStabbed:FireServer() + HandleTouched:FireServer(part)
+--    (direct_kill шитаро) — сервер регистрирует попадание;
+--  • снаряд исчез — последняя известная точка тоже бьёт (resolve_impact
+--    шитаро); один нож = одно попадание (pending.fired).
+-- События ножа кешируются ДО броска (hbLastEvents): после броска тулка
+-- может исчезнуть из персонажа и рюкзака, а бить надо её ремоутами.
+-- Радиус = слайдер окна HITBOX, 6–40, дефолт 12 (radius шитаро).
 -- ==========================================
-local hitboxState = { Enabled = false, Size = 30 }
-local lastHitboxRestore = 0   -- os.clock() последнего отката хитбоксов: guard для Velocity Desync
+local hitboxState = { Enabled = false, Size = 12 }
 
--- исходные размеры HRP: [Player] = Vector3 до первого расширения
-local hbOriginal = {}
+-- радиус с защитой от старого конфига (там лежали 25–60 от ресайза)
+local function hbRadius()
+    return math.clamp(math.floor(tonumber(hitboxState.Size) or 12), 2, 40)
+end
 
-local function hbExpand(pl, size)
-    local char = pl.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum or hum.Health <= 0 then return end
-    local target = Vector3.new(size, size, size)
-    if hbOriginal[pl] then
-        if hrp.Size == target then return end   -- уже расширено — ноль работы, ноль лагов
-    else
-        hbOriginal[pl] = hrp.Size   -- исходник запоминаем РОВНО один раз
+-- target_part_of шитаро: HRP → торс → голова
+local function hbTargetPart(char)
+    if not char then return nil end
+    return char:FindFirstChild("HumanoidRootPart")
+        or char:FindFirstChild("UpperTorso")
+        or char:FindFirstChild("Torso")
+        or char:FindFirstChild("Head")
+end
+
+-- события СВОЕГО ножа (экипированный или в рюкзаке) — ремоуты удара
+local function hbKnifeEvents()
+    local char = LocalPlayer.Character
+    local knife = char and char:FindFirstChild("Knife")
+    if not knife then
+        local bp = LocalPlayer:FindFirstChildOfClass("Backpack")
+        knife = bp and bp:FindFirstChild("Knife") or nil
     end
-    pcall(function()
-        hrp.Size = target
-        hrp.Massless = true      -- инерция сборки цели не меняется
-        hrp.CanCollide = false   -- с гуманоидом не воюем: коллизия на конечностях
-        hrp.CanTouch = true      -- Touched летящего ножа обязан ловиться
-        hrp.CanQuery = false     -- рейкасты камеры/аима сквозь бокс — камера не прыгает
-        hrp.Transparency = 1
+    return knife and knife:FindFirstChild("Events") or nil
+end
+
+-- кеш событий ножа: обновляем, пока тулка жива (до броска)
+local hbLastEvents = nil
+
+-- direct_kill шитаро: stab-сигнал + HandleTouched с партом жертвы
+local function hbDirectKill(events, part)
+    if not events or not part or not part.Parent then return false end
+    local stabbed = events:FindFirstChild("KnifeStabbed")
+    local touched = events:FindFirstChild("HandleTouched")
+    if not stabbed or not touched then return false end
+    local ok = pcall(function()
+        stabbed:FireServer()
+        touched:FireServer(part)
     end)
+    return ok
 end
 
-local function hbRestore(pl)
-    local char = pl.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local orig = hbOriginal[pl]
-    if hrp and orig then
-        pcall(function()
-            hrp.Size = orig
-            hrp.Massless = false
-            hrp.CanQuery = true
-            hrp.CanTouch = true
-        end)
+-- projectile_position шитаро: позиция снаряда, что бы это ни было
+local function hbProjectilePos(inst)
+    if not inst or not inst.Parent then return nil end
+    if inst:IsA("BasePart") then return inst.Position end
+    local blade = inst:FindFirstChild("BladePosition")
+    if blade and blade:IsA("BasePart") then return blade.Position end
+    local ok, pivot = pcall(function() return inst:GetPivot() end)
+    if ok and typeof(pivot) == "CFrame" then return pivot.Position end
+    local first = inst:FindFirstChildWhichIsA("BasePart")
+    if first then return first.Position end
+    return nil
+end
+
+-- segment_gap шитаро: расстояние от точки до отрезка траектории (a→b)
+local function hbSegmentGap(a, b, p)
+    if not a then return (b - p).Magnitude end
+    local ab = b - a
+    local len2 = ab:Dot(ab)
+    if len2 < 1e-6 then return (b - p).Magnitude end
+    local t = math.clamp((p - a):Dot(ab) / len2, 0, 1)
+    return ((a + ab * t) - p).Magnitude
+end
+
+-- pending-состояние полёта ножа (как pending шитаро)
+local hbPending = nil   -- { inst, last, time, fired, gone_at }
+
+local function hbClearPending()
+    hbPending = nil
+end
+
+-- adopt_projectile шитаро: ближайший тегированный снаряд ножа рядом с нами
+local CollectionService = game:GetService("CollectionService")
+
+local function hbAdoptProjectile()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root or not hbLastEvents then return end
+    local ok, tagged = pcall(function()
+        return CollectionService:GetTagged("ThrowingKnife")
+    end)
+    if not ok or type(tagged) ~= "table" then return end
+    local best, bestDist = nil, 30
+    for i = 1, #tagged do
+        local inst = tagged[i]
+        if inst and inst.Parent then
+            local pos = hbProjectilePos(inst)
+            if pos then
+                local d = (pos - root.Position).Magnitude
+                if d < bestDist then
+                    bestDist = d
+                    best = inst
+                end
+            end
+        end
     end
-    hbOriginal[pl] = nil
-    lastHitboxRestore = os.clock()
+    if best then
+        hbPending = { inst = best, last = hbProjectilePos(best),
+            time = os.clock(), fired = false, gone_at = nil }
+    end
 end
-
-Players.PlayerRemoving:Connect(function(pl)
-    hbOriginal[pl] = nil
-end)
 
 -- мы мардер? нож у нас по имени ИЛИ серверная роль == Murderer (имя
 -- тулки в сборках игры отличается, серверная роль надёжнее)
@@ -2221,20 +2316,97 @@ local function hbIAmMurderer()
     return ok and role == "Murderer"
 end
 
-task.spawn(function()
-    while true do
-        if hitboxState.Enabled and clientAlive() and hbIAmMurderer() then
-            for _, pl in ipairs(Players:GetPlayers()) do
-                if pl ~= LocalPlayer then
-                    hbExpand(pl, hitboxState.Size)
+-- мгновенная адопция: снаряд только что появился — подхватываем сразу,
+-- не дожидаясь ближайшего тика поллинга
+pcall(function()
+    CollectionService:GetInstanceAddedSignal("ThrowingKnife"):Connect(function()
+        if not (hitboxState.Enabled and clientAlive() and hbIAmMurderer()) then return end
+        if hbPending then return end
+        task.defer(hbAdoptProjectile)
+    end)
+end)
+
+-- полёт ножа: каждый кадр меряем отрезок траектории до всех живых целей
+RunService.Heartbeat:Connect(function()
+    if not (hitboxState.Enabled and clientAlive()) then return end
+    if not hbPending then return end
+    local now = os.clock()
+    if now - hbPending.time > 6 then hbClearPending() return end   -- как в шитаро
+    local inst = hbPending.inst
+    if inst and inst.Parent then
+        local pos = hbProjectilePos(inst)
+        if pos then
+            if not hbPending.fired then
+                local radius = hbRadius()
+                local bestPart, bestGap = nil, radius
+                for _, pl in ipairs(Players:GetPlayers()) do
+                    if pl ~= LocalPlayer then
+                        local tchar = pl.Character
+                        local hum = tchar and tchar:FindFirstChildOfClass("Humanoid")
+                        if hum and hum.Health > 0 then
+                            local part = hbTargetPart(tchar)
+                            if part then
+                                local gap = hbSegmentGap(hbPending.last, pos, part.Position)
+                                if gap <= bestGap then
+                                    bestGap = gap
+                                    bestPart = part
+                                end
+                            end
+                        end
+                    end
+                end
+                if bestPart and hbDirectKill(hbLastEvents, bestPart) then
+                    hbPending.fired = true
                 end
             end
-        else
+            hbPending.last = pos
+            hbPending.gone_at = nil
+            return
+        end
+    end
+    -- снаряд исчез: resolve_impact шитаро — последняя точка тоже бьёт
+    if not hbPending.gone_at then
+        hbPending.gone_at = now
+        return
+    end
+    if now - hbPending.gone_at >= 0.35 then
+        if not hbPending.fired and hbPending.last and hbLastEvents then
+            local radius = hbRadius()
+            local bestPart, bestDist = nil, radius
             for _, pl in ipairs(Players:GetPlayers()) do
-                hbRestore(pl)
+                if pl ~= LocalPlayer then
+                    local tchar = pl.Character
+                    local hum = tchar and tchar:FindFirstChildOfClass("Humanoid")
+                    if hum and hum.Health > 0 then
+                        local part = hbTargetPart(tchar)
+                        if part then
+                            local d = (hbPending.last - part.Position).Magnitude
+                            if d <= bestDist then
+                                bestDist = d
+                                bestPart = part
+                            end
+                        end
+                    end
+                end
+            end
+            if bestPart then hbDirectKill(hbLastEvents, bestPart) end
+        end
+        hbClearPending()
+    end
+end)
+
+-- кеш событий ножа + адопция-фолбэк: поллинг 0.15с (если сигнал
+-- GetInstanceAddedSignal не сработал — снаряд уже летел при включении)
+task.spawn(function()
+    while true do
+        if clientAlive() then
+            local ev = hbKnifeEvents()
+            if ev then hbLastEvents = ev end
+            if hitboxState.Enabled and hbIAmMurderer() and not hbPending then
+                hbAdoptProjectile()
             end
         end
-        task.wait(0.1)
+        task.wait(0.15)
     end
 end)
 
@@ -2925,11 +3097,17 @@ end)
 local INVIS_PARK_DEPTH = 12   -- глубина парковки оригинала под найденным полом
 
 local invisState = { Enabled = false, Busy = false, Invisible = false,
-    Original = nil, Clone = nil, DiedConn = nil, Gen = 0, ParkY = nil }
+    Original = nil, Clone = nil, DiedConn = nil, Gen = 0,
+    ParkY = nil, ParkX = nil, ParkZ = nil, LastTrans = 0 }
 invisState.Ghost = invisState.Ghost or 0.65   -- прозрачность клона (видишь только ты)
 local invisUIOff = nil    -- хук: UI позже подставит сюда сброс визуала тоггла
 
 local ghostState = { Folder = nil, Map = nil, Char = nil }   -- на него ссылаются фильтры рейкастов
+
+-- форварды анти-трапа (реализация в блоке 3F-бис, ниже инвиз-блока):
+-- invisRestore и гардиан вызывают их, поэтому объявления должны быть ДО них
+local trapUnlockHuman = nil      -- function(humanoid): скорость/прыжок из кеша
+local invisEnableControls = nil  -- function(): PlayerModule:GetControls():Enable()
 
 -- полное выметание состояния (без возврата персонажа)
 local function invisCleanup()
@@ -3020,6 +3198,9 @@ local function invisRestore(reason)
             end
             LocalPlayer.Character = original
             local ohum = original:FindFirstChildOfClass("Humanoid")
+            -- тело могло простоять в трапе весь конец раунда — вернём
+            -- скорость/прыжок из кеша анти-трапа (блок 3F-бис)
+            if trapUnlockHuman then pcall(trapUnlockHuman, ohum) end
             if cam then
                 cam.CameraType = Enum.CameraType.Custom
                 if ohum then pcall(function() cam.CameraSubject = ohum end) end
@@ -3069,6 +3250,8 @@ local function parkOriginal(char, fromCF)
         if res then parkY = res.Position.Y - INVIS_PARK_DEPTH end
     end)
     invisState.ParkY = parkY
+    invisState.ParkX = fromCF.X
+    invisState.ParkZ = fromCF.Z
     ohrp.CFrame = CFrame.new(fromCF.X, parkY, fromCF.Z)
     ohrp.AssemblyLinearVelocity = Vector3.zero
     ohrp.AssemblyAngularVelocity = Vector3.zero
@@ -3104,6 +3287,9 @@ local function applyInvis(state)
             for _, v in ipairs(clone:GetDescendants()) do
                 if v:IsA("BasePart") then
                     v.Transparency = (v.Name == "HumanoidRootPart") and 1 or alpha
+                    -- трап мог заанкорить тело ДО включения инвиза — клон
+                    -- унаследовал бы якорь и «инвиз есть, а не ходит»
+                    if v.Anchored then v.Anchored = false end
                 elseif v:IsA("Decal") then
                     v.Transparency = 1
                 end
@@ -3237,7 +3423,15 @@ task.spawn(function()
                             cam.CameraSubject = chum
                         end)
                     end
-                    -- тело вытащили из парковки? прячем снова
+                    -- тело вытащили из парковки? Разбираемся, ЧТО это было.
+                    -- Маленький сдвиг — сервер подтянул тело: прячем снова
+                    -- на старом месте. Большой прыжок (раунд-телепорт в
+                    -- лобби/на новую карту) — КЛОН ЕДЕТ ВМЕСТЕ С ТЕЛОМ, а
+                    -- тело перепаркуется ОТНОСИТЕЛЬНО новой точки: старый
+                    -- ParkY от бывшей карты невалиден (тело всплывало над
+                    -- полом лобби, invisRestore поднимал в воздух, клон
+                    -- оставался на снесённой карте). Трап конца раунда при
+                    -- этом снимает блок 3F-бис ниже
                     local original = invisState.Original
                     if original and original.Parent then
                         local ohrp = original:FindFirstChild("HumanoidRootPart")
@@ -3245,11 +3439,48 @@ task.spawn(function()
                             if not ohrp.Anchored then ohrp.Anchored = true end
                             local parkY = invisState.ParkY
                             if parkY and ohrp.Position.Y > parkY + 2 then
-                                pcall(function()
-                                    ohrp.CFrame = CFrame.new(ohrp.Position.X, parkY, ohrp.Position.Z)
-                                    ohrp.AssemblyLinearVelocity = Vector3.zero
-                                    ohrp.AssemblyAngularVelocity = Vector3.zero
-                                end)
+                                local p = ohrp.Position
+                                local dxz = math.abs(p.X - (invisState.ParkX or p.X))
+                                    + math.abs(p.Z - (invisState.ParkZ or p.Z))
+                                local dy = p.Y - parkY
+                                local nowC = os.clock()
+                                if (dxz > 30 or dy > 18)
+                                    and nowC - (invisState.LastTrans or 0) > 1.5 then
+                                    -- РАУНД-ПЕРЕЕЗД: следуем за телом
+                                    invisState.LastTrans = nowC
+                                    pcall(function()
+                                        local clone3 = invisState.Clone
+                                        local chrp3 = clone3
+                                            and clone3:FindFirstChild("HumanoidRootPart")
+                                        if chrp3 and (chrp3.Position - p).Magnitude > 40 then
+                                            chrp3.CFrame = CFrame.new(p.X, p.Y + 2, p.Z)
+                                            chrp3.AssemblyLinearVelocity = Vector3.zero
+                                            chrp3.AssemblyAngularVelocity = Vector3.zero
+                                            local cam3 = workspace.CurrentCamera
+                                            if cam3 then
+                                                cam3.CFrame = CFrame.new(p.X, p.Y + 5, p.Z)
+                                            end
+                                        end
+                                        local npy = p.Y - INVIS_PARK_DEPTH - 2
+                                        invisState.ParkY = npy
+                                        invisState.ParkX = p.X
+                                        invisState.ParkZ = p.Z
+                                        ohrp.CFrame = CFrame.new(p.X, npy, p.Z)
+                                        ohrp.AssemblyLinearVelocity = Vector3.zero
+                                        ohrp.AssemblyAngularVelocity = Vector3.zero
+                                    end)
+                                    -- игру могли отключить управление на
+                                    -- раунд-катсцене — включаем обратно
+                                    if invisEnableControls then
+                                        pcall(invisEnableControls)
+                                    end
+                                elseif dxz <= 30 and dy <= 18 then
+                                    pcall(function()
+                                        ohrp.CFrame = CFrame.new(p.X, parkY, p.Z)
+                                        ohrp.AssemblyLinearVelocity = Vector3.zero
+                                        ohrp.AssemblyAngularVelocity = Vector3.zero
+                                    end)
+                                end
                             end
                         end
                     end
@@ -3274,6 +3505,137 @@ LocalPlayer.CharacterAdded:Connect(function(newChar)
             and newChar ~= invisState.Clone then
             pcall(invisGracefulExit, "сервер сделал респавн — выход из инвиза")
         end
+    end)
+end)
+
+
+-- ==========================================
+-- 3F-бис. ANTI-TRAP / ФРИЗ КОНЦА РАУНДА — по дампам шитаро
+-- (trap_engage 11601 / trap_unlock 11596 / trap_kill_gui 11584 /
+-- protect_part 10537). Механика игры: Remotes TrapSystem/TrapHitLocal —
+-- после него WalkSpeed/JumpPower сброшены до <= 1, в PlayerGui лежит
+-- оверлей TrapGUI, тело могут заанкорить. С нашим инвизом это выглядит
+-- как «кончился раунд — не могу двигаться, пока не выключу инвиз»:
+-- LocalPlayer.Character — клон, трап прилетает в НЕГО, а респавна,
+-- который снял бы фриз, не будет (сервер считает нас живым телом,
+-- запаркованным под полом). Шитаро защищается метатейбл-хуками, у нас
+-- портабельно — событие ремоута + поллинг:
+--  • TrapHitLocal.OnClientEvent → окно разблокировки 5с (TRAP_HOLD);
+--  • поллинг 0.1с: WalkSpeed <= 1 дольше 1с = трап без ремоута — чиним
+--    из кеша последней нормальной скорости (trap_speed_cache);
+--  • TrapGUI из PlayerGui удаляем;
+--  • якоря и PlatformStand на СВОЁМ теле снимаем (свои парты мы якорим
+--    только у запаркованного оригинала и только при Busy — поллинг в
+--    это время тело не трогает); JumpPower/JumpHeight по UseJumpPower.
+-- ==========================================
+local trapState = { Speed = 16, Jump = 50, JumpH = 7.2, Window = 0, Zero = 0 }
+
+local function trapHuman()
+    local c = LocalPlayer.Character
+    return c and c:FindFirstChildOfClass("Humanoid") or nil
+end
+
+-- кеш нормальной скорости: обновляем, только пока значения «живые»
+local function trapCache(hum)
+    pcall(function()
+        if hum.WalkSpeed > 1 then trapState.Speed = hum.WalkSpeed end
+        if hum.UseJumpPower then
+            if hum.JumpPower > 1 then trapState.Jump = hum.JumpPower end
+        else
+            if hum.JumpHeight > 1 then trapState.JumpH = hum.JumpHeight end
+        end
+    end)
+end
+
+-- trap_unlock шитаро: вернуть скорость/прыжок из кеша
+trapUnlockHuman = function(hum)
+    if not hum or not hum.Parent or hum.Health <= 0 then return end
+    pcall(function()
+        if hum.WalkSpeed <= 1 then hum.WalkSpeed = trapState.Speed end
+        if hum.UseJumpPower then
+            if hum.JumpPower <= 1 then hum.JumpPower = trapState.Jump end
+        else
+            if hum.JumpHeight <= 1 then hum.JumpHeight = trapState.JumpH end
+        end
+    end)
+end
+
+-- trap_kill_gui шитаро: снести оверлей трапа
+local function trapKillGui()
+    pcall(function()
+        local pg = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+        if not pg then return end
+        for _, g in ipairs(pg:GetChildren()) do
+            if g.Name == "TrapGUI" then g:Destroy() end
+        end
+    end)
+end
+
+-- управление могли отключить на раунд-катсцене (PlayerModule) — вернуть
+invisEnableControls = function()
+    pcall(function()
+        local ps = LocalPlayer:FindFirstChildOfClass("PlayerScripts")
+        local pm = ps and require(ps:WaitForChild("PlayerModule", 3))
+        local ctrl = pm and pm.GetControls and pm:GetControls()
+        if ctrl and ctrl.Enable then ctrl:Enable() end
+    end)
+end
+
+-- поллинг 0.1с: трап по скорости + внешние якоря/стазы на своём теле
+task.spawn(function()
+    local t0 = os.clock()
+    while true do
+        RunService.Heartbeat:Wait()
+        if os.clock() - t0 >= 0.1 then
+            t0 = os.clock()
+            local hum = trapHuman()
+            if hum and hum.Health > 0 then
+                trapCache(hum)
+                if hum.WalkSpeed <= 1 then
+                    trapState.Zero = trapState.Zero + 0.1
+                    if trapState.Zero >= 1 and os.clock() >= trapState.Window then
+                        trapState.Window = os.clock() + 5   -- TRAP_HOLD шитаро
+                    end
+                else
+                    trapState.Zero = 0
+                end
+                if os.clock() < trapState.Window then
+                    trapUnlockHuman(hum)
+                    trapKillGui()
+                end
+                if not invisState.Busy then
+                    local ch = LocalPlayer.Character
+                    if ch then
+                        for _, pv in ipairs(ch:GetDescendants()) do
+                            if pv:IsA("BasePart") and pv.Anchored then
+                                pcall(function() pv.Anchored = false end)
+                            end
+                        end
+                        if hum.PlatformStand then
+                            pcall(function() hum.PlatformStand = false end)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- мгновенная реакция на штатный сигнал трапа (TrapSystem/TryHitLocal
+-- шитаро 11621-11625): не ждём секунду поллинга
+task.spawn(function()
+    local ok, remote = pcall(function()
+        local sys = ReplicatedStorage:WaitForChild("TrapSystem", 20)
+        return sys and sys:WaitForChild("TrapHitLocal", 20) or nil
+    end)
+    if not ok or not remote then
+        print("[PERMABAN] анти-трап: TrapSystem не найден — работает поллинг скорости")
+        return
+    end
+    pcall(function()
+        remote.OnClientEvent:Connect(function()
+            trapState.Window = os.clock() + 5
+        end)
     end)
 end)
 
@@ -3318,7 +3680,7 @@ local function desyncStep()
     local now = os.clock()
     if now < desyncSafeUntil then return end
     if now - desyncState.LastFire < desyncState.Interval then return end
-    if now - lastHitboxRestore < 0.5 then return end
+
     local char = LocalPlayer.Character
     if not char then return end
     local hum = char:FindFirstChildOfClass("Humanoid")
@@ -3761,6 +4123,7 @@ do
     merge(chamsState, rawget(S, "chams"))
     merge(aimState, rawget(S, "aim"))
     merge(hitboxState, rawget(S, "hitbox"))
+    hitboxState.Size = math.clamp(math.floor(tonumber(hitboxState.Size) or 12), 6, 40)
     merge(grabState, rawget(S, "grab"))
     merge(fakeState, rawget(S, "fake"))
     merge(desyncState, rawget(S, "desync"))
@@ -5528,11 +5891,9 @@ BuildUI = function()
     invisUIOff = invisSetVisual   -- смерть клона: тоггл гасится сам
 
     local hitMore = AddToggle(ContentTabs["Target"], 2, "Hitbox", hitboxState.Enabled,
-        "хитбокс-экспандер: ТОЛЬКО за мардера — это и есть работа ножа: летящий нож сам задевает расширенные хитбоксы игроков. Размер — окно HITBOX", function(state)
+        "хитбокс с дампа шитаро: ТОЛЬКО за мардера — брошенный нож сам доводится до цели: когда снаряд прошёл в радиусе от игрока, стреляем HandleTouched его парта. Радиус — окно HITBOX", function(state)
             hitboxState.Enabled = state
-            if not state then
-                for _, pl in ipairs(Players:GetPlayers()) do hbRestore(pl) end
-            end
+            if not state then hbClearPending() end
         end)
 
     local desyncMore = AddToggle(ContentTabs["Target"], 2, "Velocity Desync", desyncState.Enabled,
@@ -5829,12 +6190,12 @@ BuildUI = function()
     ContentTabs["Animation"].CanvasSize = UDim2.new(0, 0, 0, 80)
 
     -- ==========================================
-    -- ОКНО HITBOX: размер бокса 25–60, применяется сразу
+    -- ОКНО HITBOX: радиус довода ножа 6–40 (дефолт 12 — как в шитаро)
     -- ==========================================
     local HitboxWin = MakeWindow("HITBOX", 110, 620, 200)
     local hbLay = NewVLayout(HitboxWin, 38)
     local hrow = hbLay.AddRow(40)
-    AddMiniSlider(hrow.f, 0, "Size", 25, 60, hitboxState.Size, false, function(v)
+    AddMiniSlider(hrow.f, 0, "Radius", 6, 40, hitboxState.Size, false, function(v)
         hitboxState.Size = math.floor(v + 0.5)
     end)
 
@@ -6073,5 +6434,5 @@ print("[PermaBan] Loaded. Hotkey: RightAlt")
 -- маркер конца файла: если ты видишь ЭТУ строку в консоли — исполнился
 -- именно свежий билд целиком. если видишь только "v2.17-knifehb loaded", но не
 -- видишь эту — в экзекуторе крутится старая копия, ищи её в autoexec/
-local BUILD2 = "v2.29-clearinvis"
+local BUILD2 = "v2.40-knifefly"
 print("[PERMABAN] " .. BUILD2 .. ": конец файла достигнут, фон зашит в скрипт")
